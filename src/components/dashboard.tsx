@@ -1,8 +1,21 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { isSameDay, isToday, format } from "date-fns";
+import { isSameDay, isToday } from "date-fns";
 import { Plus } from "lucide-react";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  Timestamp,
+  query,
+  where,
+} from "firebase/firestore";
+
+import { db } from "@/lib/firebase";
 import type { Task } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -12,85 +25,126 @@ import { CreateTaskDialog } from "./create-task-dialog";
 import { Logo } from "./icons";
 import { TaskList } from "./task-list";
 import { TaskProgress } from "./task-progress";
+import { initialTasks } from "@/lib/data";
 
-type DashboardProps = {
-  initialTasks: Task[];
-};
+type DashboardProps = {};
 
-export function Dashboard({ initialTasks }: DashboardProps) {
+export function Dashboard({}: DashboardProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [activeTimer, setActiveTimer] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  
+  const tasksCollectionRef = collection(db, "tasks");
 
-  useEffect(() => {
+  const fetchTasks = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const storedTasks = localStorage.getItem("tasks");
-      if (storedTasks) {
-        const parsedTasks = JSON.parse(storedTasks, (key, value) => {
-          if (key === 'dueDate') {
-            return new Date(value);
-          }
-          return value;
-        });
-        setTasks(parsedTasks);
-      } else {
-        setTasks(initialTasks);
+      const querySnapshot = await getDocs(tasksCollectionRef);
+      if (querySnapshot.empty) {
+        // If no tasks in Firestore, populate with initial data
+        const batch = initialTasks.map(task => addDoc(tasksCollectionRef, {
+            ...task,
+            dueDate: Timestamp.fromDate(task.dueDate)
+        }));
+        await Promise.all(batch);
+        fetchTasks(); // Re-fetch after seeding
+        return;
       }
+      const tasksData = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          dueDate: (data.dueDate as Timestamp).toDate(),
+        } as Task;
+      });
+      setTasks(tasksData);
     } catch (error) {
-      console.error("Failed to load tasks from localStorage", error);
-      setTasks(initialTasks);
+      console.error("Error fetching tasks: ", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch tasks from Firestore.",
+        variant: "destructive",
+      });
+    } finally {
+        setIsLoading(false);
     }
-  }, [initialTasks]);
+  }, [toast]);
 
   useEffect(() => {
-    try {
-        if(tasks.length > 0) {
-            localStorage.setItem("tasks", JSON.stringify(tasks));
-        }
-    } catch (error) {
-        console.error("Failed to save tasks to localStorage", error);
-    }
-  }, [tasks]);
+    fetchTasks();
+  }, [fetchTasks]);
 
   useEffect(() => {
     const tasksDueToday = tasks.filter(task => !task.isCompleted && isToday(task.dueDate));
-    if (tasksDueToday.length > 0) {
+    if (tasksDueToday.length > 0 && !isLoading) {
       toast({
         title: "Upcoming Deadlines",
         description: `You have ${tasksDueToday.length} task${tasksDueToday.length > 1 ? 's' : ''} due today.`,
       });
     }
-  }, [tasks, toast]);
+  }, [tasks, toast, isLoading]);
 
-  const handleAddTask = (newTaskData: Omit<Task, 'id' | 'isCompleted' | 'timeSpent'>) => {
-    const newTask: Task = {
-      ...newTaskData,
-      id: crypto.randomUUID(),
-      isCompleted: false,
-      timeSpent: 0,
-    };
-    setTasks(prev => [...prev, newTask]);
-    toast({ title: "Task Created", description: `"${newTask.title}" has been added.` });
+  const handleAddTask = async (newTaskData: Omit<Task, 'id' | 'isCompleted' | 'timeSpent'>) => {
+    try {
+      const docRef = await addDoc(tasksCollectionRef, {
+        ...newTaskData,
+        isCompleted: false,
+        timeSpent: 0,
+        dueDate: Timestamp.fromDate(newTaskData.dueDate),
+      });
+      const newTask = { ...newTaskData, id: docRef.id, isCompleted: false, timeSpent: 0 };
+      setTasks(prev => [...prev, newTask]);
+      toast({ title: "Task Created", description: `"${newTask.title}" has been added.` });
+    } catch (error) {
+      console.error("Error adding task: ", error);
+      toast({ title: "Error", description: "Failed to create task.", variant: "destructive" });
+    }
   };
   
-  const handleUpdateTask = (updatedTask: Task) => {
-    setTasks(prev => prev.map(task => task.id === updatedTask.id ? updatedTask : task));
-    toast({ title: "Task Updated", description: `"${updatedTask.title}" has been updated.` });
-    setTaskToEdit(null);
+  const handleUpdateTask = async (updatedTask: Task) => {
+    try {
+      const taskDoc = doc(db, "tasks", updatedTask.id);
+      const { id, ...taskData } = updatedTask;
+      await updateDoc(taskDoc, {
+        ...taskData,
+        dueDate: Timestamp.fromDate(taskData.dueDate)
+      });
+      setTasks(prev => prev.map(task => task.id === updatedTask.id ? updatedTask : task));
+      toast({ title: "Task Updated", description: `"${updatedTask.title}" has been updated.` });
+      setTaskToEdit(null);
+    } catch (error) {
+      console.error("Error updating task: ", error);
+      toast({ title: "Error", description: "Failed to update task.", variant: "destructive" });
+    }
   }
 
-  const handleToggleComplete = (id: string, isCompleted: boolean) => {
-    setTasks(prev => prev.map(task => (task.id === id ? { ...task, isCompleted } : task)));
+  const handleToggleComplete = async (id: string, isCompleted: boolean) => {
+     try {
+      const taskDoc = doc(db, "tasks", id);
+      await updateDoc(taskDoc, { isCompleted });
+      setTasks(prev => prev.map(task => (task.id === id ? { ...task, isCompleted } : task)));
+    } catch (error) {
+      console.error("Error toggling task completion: ", error);
+      toast({ title: "Error", description: "Failed to update task status.", variant: "destructive" });
+    }
   };
   
-  const handleDeleteTask = (id: string) => {
+  const handleDeleteTask = async (id: string) => {
     const taskToDelete = tasks.find(t => t.id === id);
-    setTasks(prev => prev.filter(task => task.id !== id));
-    if (taskToDelete) {
-        toast({ title: "Task Deleted", description: `"${taskToDelete.title}" has been removed.`, variant: 'destructive'});
+    try {
+        await deleteDoc(doc(db, "tasks", id));
+        setTasks(prev => prev.filter(task => task.id !== id));
+        if (taskToDelete) {
+            toast({ title: "Task Deleted", description: `"${taskToDelete.title}" has been removed.`, variant: 'destructive'});
+        }
+    } catch(error) {
+        console.error("Error deleting task: ", error);
+        toast({ title: "Error", description: "Failed to delete task.", variant: "destructive" });
     }
   };
 
@@ -104,13 +158,24 @@ export function Dashboard({ initialTasks }: DashboardProps) {
     setIsDialogOpen(true);
   }
   
-  const updateTaskTime = useCallback((taskId: string, time: number) => {
-    setTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id === taskId ? { ...task, timeSpent: task.timeSpent + time } : task
-      )
-    );
-  }, []);
+  const updateTaskTime = useCallback(async (taskId: string, time: number) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const newTimeSpent = task.timeSpent + time;
+    try {
+      const taskDoc = doc(db, "tasks", taskId);
+      await updateDoc(taskDoc, { timeSpent: newTimeSpent });
+      setTasks(prevTasks =>
+        prevTasks.map(t =>
+          t.id === taskId ? { ...t, timeSpent: newTimeSpent } : t
+        )
+      );
+    } catch (error) {
+        console.error("Error updating task time: ", error);
+        toast({ title: "Error", description: "Failed to log time.", variant: "destructive" });
+    }
+  }, [tasks, toast]);
 
   const tasksForSelectedDay = useMemo(() => {
     if (!selectedDate) return [];
@@ -164,7 +229,7 @@ export function Dashboard({ initialTasks }: DashboardProps) {
           
           <section>
             <h2 className="text-2xl font-bold mb-4">
-              Tasks for {selectedDate ? format(selectedDate, "MMMM d, yyyy") : '...'}
+              Tasks for {selectedDate ? new Intl.DateTimeFormat('en-US', { dateStyle: 'full' }).format(selectedDate) : '...'}
             </h2>
             <div className="h-[calc(100vh-200px)] overflow-y-auto pr-2">
               <TaskList 
