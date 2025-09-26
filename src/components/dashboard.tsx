@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { isSameDay, isToday } from "date-fns";
+import { format, isSameDay, isToday } from "date-fns";
 import { Plus } from "lucide-react";
 import {
   collection,
@@ -13,6 +13,7 @@ import {
   Timestamp,
   query,
   where,
+  writeBatch,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -46,11 +47,16 @@ export function Dashboard({}: DashboardProps) {
       const querySnapshot = await getDocs(tasksCollectionRef);
       if (querySnapshot.empty) {
         // If no tasks in Firestore, populate with initial data
-        const batch = initialTasks.map(task => addDoc(tasksCollectionRef, {
-            ...task,
-            dueDate: Timestamp.fromDate(task.dueDate)
-        }));
-        await Promise.all(batch);
+        const batch = writeBatch(db);
+        initialTasks.forEach(task => {
+          const { id, ...taskData } = task; // Exclude the static ID
+          const docRef = doc(tasksCollectionRef); // Let Firestore generate ID
+          batch.set(docRef, {
+            ...taskData,
+            dueDate: Timestamp.fromDate(taskData.dueDate)
+          });
+        });
+        await batch.commit();
         fetchTasks(); // Re-fetch after seeding
         return;
       }
@@ -229,7 +235,7 @@ export function Dashboard({}: DashboardProps) {
           
           <section>
             <h2 className="text-2xl font-bold mb-4">
-              Tasks for {selectedDate ? new Intl.DateTimeFormat('en-US', { dateStyle: 'full' }).format(selectedDate) : '...'}
+              Tasks for {selectedDate ? format(selectedDate, "PPP") : '...'}
             </h2>
             <div className="h-[calc(100vh-200px)] overflow-y-auto pr-2">
               <TaskList 
