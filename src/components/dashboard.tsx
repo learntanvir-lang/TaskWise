@@ -41,11 +41,12 @@ export function Dashboard({}: DashboardProps) {
   
   const tasksCollectionRef = collection(db, "tasks");
 
-  const fetchTasks = useCallback(async () => {
+  const fetchTasks = useCallback(async (date: Date) => {
     setIsLoading(true);
     try {
-      const querySnapshot = await getDocs(tasksCollectionRef);
-      if (querySnapshot.empty) {
+      // Fetch all tasks for summary data (progress, calendar markers)
+      const allTasksSnapshot = await getDocs(tasksCollectionRef);
+      if (allTasksSnapshot.empty) {
         // If no tasks in Firestore, populate with initial data
         const batch = writeBatch(db);
         initialTasks.forEach(task => {
@@ -57,10 +58,11 @@ export function Dashboard({}: DashboardProps) {
           });
         });
         await batch.commit();
-        fetchTasks(); // Re-fetch after seeding
+        if (selectedDate) fetchTasks(selectedDate); // Re-fetch after seeding
         return;
       }
-      const tasksData = querySnapshot.docs.map(doc => {
+      
+      const allTasksData = allTasksSnapshot.docs.map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -68,7 +70,8 @@ export function Dashboard({}: DashboardProps) {
           dueDate: (data.dueDate as Timestamp).toDate(),
         } as Task;
       });
-      setTasks(tasksData);
+      setTasks(allTasksData);
+
     } catch (error) {
       console.error("Error fetching tasks: ", error);
       toast({
@@ -79,11 +82,13 @@ export function Dashboard({}: DashboardProps) {
     } finally {
         setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast, selectedDate]);
 
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    if (selectedDate) {
+      fetchTasks(selectedDate);
+    }
+  }, [fetchTasks, selectedDate]);
 
   useEffect(() => {
     const tasksDueToday = tasks.filter(task => !task.isCompleted && isToday(task.dueDate));
@@ -203,8 +208,8 @@ export function Dashboard({}: DashboardProps) {
   };
 
   return (
-    <div className="flex flex-col h-screen">
-      <header className="flex items-center justify-between p-4 border-b shrink-0">
+    <div className="flex flex-col h-screen bg-gray-50/50 dark:bg-gray-950/50">
+      <header className="flex items-center justify-between p-4 border-b shrink-0 bg-white dark:bg-gray-900">
         <div className="flex items-center gap-2">
           <Logo className="h-8 w-8 text-primary" />
           <h1 className="text-xl font-bold tracking-tight">TaskWise</h1>
@@ -216,8 +221,8 @@ export function Dashboard({}: DashboardProps) {
       </header>
       
       <main className="flex-1 overflow-auto p-4 md:p-6">
-        <div className="grid md:grid-cols-[350px_1fr] lg:grid-cols-[400px_1fr] gap-6 max-w-7xl mx-auto">
-          <aside className="space-y-6">
+        <div className="grid lg:grid-cols-[350px_1fr] xl:grid-cols-[400px_1fr] gap-6 max-w-7xl mx-auto">
+          <aside className="space-y-6 lg:sticky lg:top-6">
             <TaskProgress totalTasks={tasks.length} completedTasks={completedTasksCount} />
             <Card>
               <CardContent className="p-1">
@@ -233,11 +238,11 @@ export function Dashboard({}: DashboardProps) {
             </Card>
           </aside>
           
-          <section>
+          <section className="min-w-0">
             <h2 className="text-2xl font-bold mb-4">
               Tasks for {selectedDate ? format(selectedDate, "PPP") : '...'}
             </h2>
-            <div className="h-[calc(100vh-200px)] overflow-y-auto pr-2">
+            <div className="h-full">
               <TaskList 
                 tasks={tasksForSelectedDay} 
                 onToggleComplete={handleToggleComplete}
@@ -246,6 +251,7 @@ export function Dashboard({}: DashboardProps) {
                 activeTimer={activeTimer}
                 setActiveTimer={setActiveTimer}
                 updateTaskTime={updateTaskTime}
+                isLoading={isLoading}
               />
             </div>
           </section>
