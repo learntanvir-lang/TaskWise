@@ -18,12 +18,42 @@ type DashboardProps = {
 };
 
 export function Dashboard({ initialTasks }: DashboardProps) {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [activeTimer, setActiveTimer] = useState<string | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    try {
+      const storedTasks = localStorage.getItem("tasks");
+      if (storedTasks) {
+        const parsedTasks = JSON.parse(storedTasks, (key, value) => {
+          if (key === 'dueDate') {
+            return new Date(value);
+          }
+          return value;
+        });
+        setTasks(parsedTasks);
+      } else {
+        setTasks(initialTasks);
+      }
+    } catch (error) {
+      console.error("Failed to load tasks from localStorage", error);
+      setTasks(initialTasks);
+    }
+  }, [initialTasks]);
+
+  useEffect(() => {
+    try {
+        if(tasks.length > 0) {
+            localStorage.setItem("tasks", JSON.stringify(tasks));
+        }
+    } catch (error) {
+        console.error("Failed to save tasks to localStorage", error);
+    }
+  }, [tasks]);
 
   useEffect(() => {
     const tasksDueToday = tasks.filter(task => !task.isCompleted && isToday(task.dueDate));
@@ -35,7 +65,7 @@ export function Dashboard({ initialTasks }: DashboardProps) {
     }
   }, [tasks, toast]);
 
-  const handleAddTask = (newTaskData: Omit<Task, 'id' | 'isCompleted'>) => {
+  const handleAddTask = (newTaskData: Omit<Task, 'id' | 'isCompleted' | 'timeSpent'>) => {
     const newTask: Task = {
       ...newTaskData,
       id: crypto.randomUUID(),
