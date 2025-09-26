@@ -1,0 +1,58 @@
+import type { Task } from "./types";
+
+export const initialTasks: Task[] = [
+  {
+    id: "1",
+    title: "Finish project proposal",
+    description: "Complete the final draft for the Q3 project proposal.",
+    dueDate: new Date(new Date().setDate(new Date().getDate() + 2)),
+    priority: "high",
+    category: "work",
+    isCompleted: false,
+  },
+  {
+    id: "2",
+    title: "Buy groceries",
+    description: "Milk, bread, cheese, and eggs.",
+    dueDate: new Date(),
+    priority: "medium",
+    category: "shopping",
+    isCompleted: false,
+  },
+  {
+    id: "3",
+    title: "Schedule dentist appointment",
+    description: "Annual check-up.",
+    dueDate: new Date(new Date().setDate(new Date().getDate() + 10)),
+    priority: "low",
+    category: "personal",
+    isCompleted: false,
+  },
+  {
+    id: "4",
+    title: "Team meeting",
+    description: "Weekly sync-up with the development team.",
+    dueDate: new Date(new Date().setDate(new Date().getDate() + 1)),
+    priority: "high",
+    category: "work",
+    isCompleted: true,
+  },
+  {
+    id: "5",
+    title: "Call Mom",
+    description: "Catch up with mom.",
+    dueDate: new Date(),
+    priority: "medium",
+    category: "personal",
+    isCompleted: true,
+  },
+  {
+    id: "6",
+    title: "Renew gym membership",
+    description: "Membership expires at the end of the month.",
+    dueDate: new Date(new Date().setDate(new Date().getDate() + 5)),
+    priority: "low",
+    category: "personal",
+    isCompleted: false,
+  },
+];

@@ -1,0 +1,15 @@
+export type TaskPriority = "low" | "medium" | "high";
+export type TaskCategory = "work" | "personal" | "shopping" | "other";
+
+export type Task = {
+  id: string;
+  title: string;
+  description?: string;
+  dueDate: Date;
+  priority: TaskPriority;
+  category: TaskCategory;
+  isCompleted: boolean;
+};
+
+export const priorities: TaskPriority[] = ["low", "medium", "high"];
+export const categories: TaskCategory[] = ["work", "personal", "shopping", "other"];
