@@ -48,8 +48,17 @@ const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   dueDate: z.date({ required_error: "A due date is required." }),
-  priority: z.enum(priorities, { required_error: "Priority is required" }),
-  category: z.enum(categories, { required_error: "Category is required" }),
+  priority: z.enum(priorities),
+  category: z.string({ required_error: "Category is required" }),
+  customCategory: z.string().optional(),
+}).refine(data => {
+    if (data.category === 'other' && !data.customCategory) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Custom category cannot be empty.",
+    path: ["customCategory"],
 });
 
 type TaskFormValues = z.infer<typeof taskSchema>;
@@ -75,12 +84,20 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
       dueDate: new Date(),
       priority: "medium",
       category: "personal",
+      customCategory: "",
     },
   });
+    
+  const categoryValue = form.watch("category");
 
   useEffect(() => {
     if (taskToEdit) {
-      form.reset(taskToEdit);
+      const isCustom = !categories.includes(taskToEdit.category);
+      form.reset({
+        ...taskToEdit,
+        category: isCustom ? "other" : taskToEdit.category,
+        customCategory: isCustom ? taskToEdit.category : "",
+      });
     } else {
       form.reset({
         title: "",
@@ -88,6 +105,7 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
         dueDate: new Date(),
         priority: "medium",
         category: "personal",
+        customCategory: "",
       });
     }
   }, [taskToEdit, form, isOpen]);
@@ -121,10 +139,13 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
   };
 
   function onSubmit(data: TaskFormValues) {
+    const finalCategory = data.category === 'other' ? data.customCategory! : data.category;
+    const taskData = { ...data, category: finalCategory };
+    
     if (taskToEdit) {
-        onTaskUpdate({ ...taskToEdit, ...data });
+        onTaskUpdate({ ...taskToEdit, ...taskData });
     } else {
-        onTaskCreate(data);
+        onTaskCreate(taskData);
     }
     setIsOpen(false);
     form.reset();
@@ -222,7 +243,7 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a category" />
@@ -241,6 +262,22 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
                 )}
               />
             </div>
+
+            {categoryValue === 'other' && (
+                <FormField
+                    control={form.control}
+                    name="customCategory"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Custom Category</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Enter custom category" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            )}
             
             <FormField
               control={form.control}

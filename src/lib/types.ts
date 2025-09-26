@@ -1,5 +1,5 @@
 export type TaskPriority = "low" | "medium" | "high";
-export type TaskCategory = "work" | "personal" | "shopping" | "other";
+export type TaskCategory = string;
 
 export type Task = {
   id: string;
@@ -13,4 +13,4 @@ export type Task = {
 };
 
 export const priorities: TaskPriority[] = ["low", "medium", "high"];
-export const categories: TaskCategory[] = ["work", "personal", "shopping", "other"];
+export const categories: string[] = ["work", "personal", "shopping", "other"];

@@ -15,9 +15,10 @@ import {
   ShoppingBasket,
   Square,
   Trash2,
+  Tag
 } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
-import type { Task, TaskCategory, TaskPriority } from "@/lib/types";
+import type { Task, TaskPriority } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,12 +55,18 @@ const priorityColors: Record<TaskPriority, string> = {
   high: "border-transparent bg-red-200 text-red-800 dark:bg-red-700 dark:text-red-200 hover:bg-red-300",
 }
 
-const categoryIcons: Record<TaskCategory, React.ReactNode> = {
+const categoryIcons: Record<string, React.ReactNode> = {
   work: <Briefcase className="h-4 w-4" />,
   personal: <Home className="h-4 w-4" />,
   shopping: <ShoppingBasket className="h-4 w-4" />,
   other: <Plus className="h-4 w-4" />,
+  default: <Tag className="h-4 w-4" />,
 };
+
+const getCategoryIcon = (category: string) => {
+    const lowerCategory = category.toLowerCase();
+    return categoryIcons[lowerCategory] || categoryIcons.default;
+}
 
 export function TaskItem({ 
   task, 
@@ -183,7 +190,7 @@ export function TaskItem({
           <span className="ml-1">{task.priority}</span>
         </Badge>
         <Badge variant="secondary" className="capitalize">
-          {categoryIcons[task.category]}
+          {getCategoryIcon(task.category)}
           <span className="ml-1">{task.category}</span>
         </Badge>
         {(totalTime > 0) && (
