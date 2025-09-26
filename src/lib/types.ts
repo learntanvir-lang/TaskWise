@@ -9,6 +9,7 @@ export type Task = {
   priority: TaskPriority;
   category: TaskCategory;
   isCompleted: boolean;
+  timeSpent: number; // in seconds
 };
 
 export const priorities: TaskPriority[] = ["low", "medium", "high"];

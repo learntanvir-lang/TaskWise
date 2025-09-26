@@ -2,16 +2,26 @@
 
 import type { Task } from "@/lib/types";
 import { TaskItem } from "./task-item";
-import { AnimatePresence, motion } from "framer-motion";
 
 type TaskListProps = {
   tasks: Task[];
   onToggleComplete: (id: string, isCompleted: boolean) => void;
   onDelete: (id:string) => void;
   onEdit: (task: Task) => void;
+  activeTimer: string | null;
+  setActiveTimer: (id: string | null) => void;
+  updateTaskTime: (id: string, time: number) => void;
 };
 
-export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskListProps) {
+export function TaskList({ 
+  tasks, 
+  onToggleComplete, 
+  onDelete, 
+  onEdit,
+  activeTimer,
+  setActiveTimer,
+  updateTaskTime 
+}: TaskListProps) {
   if (tasks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted bg-muted/20 p-8 text-center h-full">
@@ -30,6 +40,10 @@ export function TaskList({ tasks, onToggleComplete, onDelete, onEdit }: TaskList
               onToggleComplete={onToggleComplete}
               onDelete={onDelete}
               onEdit={onEdit}
+              isTimerActive={activeTimer === task.id}
+              setActiveTimer={setActiveTimer}
+              updateTaskTime={updateTaskTime}
+              isAnotherTimerActive={activeTimer !== null && activeTimer !== task.id}
             />
         ))}
     </div>

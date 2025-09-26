@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { isSameDay, isToday, format } from "date-fns";
 import { Plus } from "lucide-react";
 import type { Task } from "@/lib/types";
@@ -22,6 +22,7 @@ export function Dashboard({ initialTasks }: DashboardProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
+  const [activeTimer, setActiveTimer] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export function Dashboard({ initialTasks }: DashboardProps) {
       ...newTaskData,
       id: crypto.randomUUID(),
       isCompleted: false,
+      timeSpent: 0,
     };
     setTasks(prev => [...prev, newTask]);
     toast({ title: "Task Created", description: `"${newTask.title}" has been added.` });
@@ -71,6 +73,14 @@ export function Dashboard({ initialTasks }: DashboardProps) {
     setTaskToEdit(null);
     setIsDialogOpen(true);
   }
+  
+  const updateTaskTime = useCallback((taskId: string, time: number) => {
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === taskId ? { ...task, timeSpent: task.timeSpent + time } : task
+      )
+    );
+  }, []);
 
   const tasksForSelectedDay = useMemo(() => {
     if (!selectedDate) return [];
@@ -132,6 +142,9 @@ export function Dashboard({ initialTasks }: DashboardProps) {
                 onToggleComplete={handleToggleComplete}
                 onDelete={handleDeleteTask}
                 onEdit={handleEditTask}
+                activeTimer={activeTimer}
+                setActiveTimer={setActiveTimer}
+                updateTaskTime={updateTaskTime}
               />
             </div>
           </section>

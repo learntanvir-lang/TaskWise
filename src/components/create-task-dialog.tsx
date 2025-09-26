@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -57,7 +57,7 @@ type TaskFormValues = z.infer<typeof taskSchema>;
 type CreateTaskDialogProps = {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  onTaskCreate: (task: Omit<Task, 'id' | 'isCompleted'>) => void;
+  onTaskCreate: (task: Omit<Task, 'id' | 'isCompleted' | 'timeSpent'>) => void;
   onTaskUpdate: (task: Task) => void;
   taskToEdit: Task | null;
 };
@@ -78,7 +78,7 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
     },
   });
 
-  useState(() => {
+  useEffect(() => {
     if (taskToEdit) {
       form.reset(taskToEdit);
     } else {
@@ -90,7 +90,7 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
         category: "personal",
       });
     }
-  });
+  }, [taskToEdit, form, isOpen]);
 
   const handleSuggestPriority = async () => {
     const { title, description, dueDate } = form.getValues();
@@ -132,10 +132,10 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
   }
   
   const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
     if (!open) {
         form.reset();
         setAiSuggestion(null);
-        setIsOpen(false);
     }
   }
 

@@ -1,16 +1,19 @@
 "use client";
 
+import { useState, useEffect, useCallback } from 'react';
 import {
   Briefcase,
   Calendar as CalendarIcon,
-  Check,
   ChevronUp,
+  Clock,
   Flame,
   Home,
   MoreHorizontal,
   Pencil,
+  Play,
   Plus,
   ShoppingBasket,
+  Square,
   Trash2,
 } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
@@ -26,12 +29,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useToast } from '@/hooks/use-toast';
 
 type TaskItemProps = {
   task: Task;
   onToggleComplete: (id: string, isCompleted: boolean) => void;
   onDelete: (id:string) => void;
   onEdit: (task: Task) => void;
+  isTimerActive: boolean;
+  setActiveTimer: (id: string | null) => void;
+  updateTaskTime: (id: string, time: number) => void;
+  isAnotherTimerActive: boolean;
 };
 
 const priorityIcons: Record<TaskPriority, React.ReactNode> = {
@@ -53,8 +61,62 @@ const categoryIcons: Record<TaskCategory, React.ReactNode> = {
   other: <Plus className="h-4 w-4" />,
 };
 
-export function TaskItem({ task, onToggleComplete, onDelete, onEdit }: TaskItemProps) {
+export function TaskItem({ 
+  task, 
+  onToggleComplete, 
+  onDelete, 
+  onEdit,
+  isTimerActive,
+  setActiveTimer,
+  updateTaskTime,
+  isAnotherTimerActive
+}: TaskItemProps) {
+  const { toast } = useToast();
+  const [elapsedTime, setElapsedTime] = useState(0);
   const isOverdue = !task.isCompleted && isPast(task.dueDate) && !isToday(task.dueDate);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isTimerActive) {
+      interval = setInterval(() => {
+        setElapsedTime(prev => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isTimerActive]);
+
+  const handleTimerToggle = useCallback(() => {
+    if (isTimerActive) {
+      // Stop timer
+      updateTaskTime(task.id, elapsedTime);
+      setActiveTimer(null);
+      setElapsedTime(0);
+      toast({ title: "Timer Stopped", description: `Time logged for "${task.title}".` });
+    } else {
+      // Start timer
+      if (isAnotherTimerActive) {
+        toast({ title: "Another Timer Active", description: "Please stop the other timer before starting a new one.", variant: "destructive" });
+        return;
+      }
+      setActiveTimer(task.id);
+      toast({ title: "Timer Started", description: `Timing task "${task.title}".` });
+    }
+  }, [isTimerActive, isAnotherTimerActive, task.id, task.title, elapsedTime, setActiveTimer, updateTaskTime, toast]);
+  
+  const formatTime = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return [
+        hours > 0 ? `${hours}h` : '',
+        minutes > 0 ? `${minutes}m` : '',
+        seconds > 0 || (hours === 0 && minutes === 0) ? `${seconds}s` : '',
+    ].filter(Boolean).join(' ').trim();
+  }
+
+  const totalTime = task.timeSpent + elapsedTime;
 
   return (
     <Card className={cn("transition-all", task.isCompleted && "bg-muted/50", isOverdue && "border-destructive/50")}>
@@ -68,24 +130,38 @@ export function TaskItem({ task, onToggleComplete, onDelete, onEdit }: TaskItemP
         <CardTitle className={cn("flex-1 text-base font-medium", task.isCompleted && "text-muted-foreground line-through")}>
           {task.title}
         </CardTitle>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="h-4 w-4" />
-              <span className="sr-only">More actions</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(task)}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onDelete(task.id)} className="text-destructive">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+            {!task.isCompleted && (
+                 <Button
+                    variant={isTimerActive ? "destructive" : "outline"}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={handleTimerToggle}
+                    disabled={isAnotherTimerActive && !isTimerActive}
+                    aria-label={isTimerActive ? 'Stop timer' : 'Start timer'}
+                 >
+                    {isTimerActive ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                 </Button>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="sr-only">More actions</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onEdit(task)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDelete(task.id)} className="text-destructive">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
       </CardHeader>
       {task.description && (
         <CardContent className="px-4 pb-2 pt-0">
@@ -110,6 +186,12 @@ export function TaskItem({ task, onToggleComplete, onDelete, onEdit }: TaskItemP
           {categoryIcons[task.category]}
           <span className="ml-1">{task.category}</span>
         </Badge>
+        {(totalTime > 0) && (
+            <Badge variant="outline" className="text-xs">
+                <Clock className="mr-1 h-3 w-3" />
+                {formatTime(totalTime)}
+            </Badge>
+        )}
       </CardFooter>
     </Card>
   );

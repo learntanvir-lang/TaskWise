@@ -9,6 +9,7 @@ export const initialTasks: Task[] = [
     priority: "high",
     category: "work",
     isCompleted: false,
+    timeSpent: 0,
   },
   {
     id: "2",
@@ -18,6 +19,7 @@ export const initialTasks: Task[] = [
     priority: "medium",
     category: "shopping",
     isCompleted: false,
+    timeSpent: 0,
   },
   {
     id: "3",
@@ -27,6 +29,7 @@ export const initialTasks: Task[] = [
     priority: "low",
     category: "personal",
     isCompleted: false,
+    timeSpent: 0,
   },
   {
     id: "4",
@@ -36,6 +39,7 @@ export const initialTasks: Task[] = [
     priority: "high",
     category: "work",
     isCompleted: true,
+    timeSpent: 3600, // 1 hour
   },
   {
     id: "5",
@@ -45,6 +49,7 @@ export const initialTasks: Task[] = [
     priority: "medium",
     category: "personal",
     isCompleted: true,
+    timeSpent: 900, // 15 minutes
   },
   {
     id: "6",
@@ -54,5 +59,6 @@ export const initialTasks: Task[] = [
     priority: "low",
     category: "personal",
     isCompleted: false,
+    timeSpent: 0,
   },
 ];
