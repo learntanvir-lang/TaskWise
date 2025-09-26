@@ -1,6 +1,7 @@
 // src/lib/firebase.ts
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
   "projectId": "studio-6364470734-ca235",
@@ -17,3 +18,4 @@ const app = initializeApp(firebaseConfig);
 
 // Get a Firestore instance
 export const db = getFirestore(app);
+export const auth = getAuth(app);

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { format, isSameDay, isToday } from "date-fns";
-import { Plus } from "lucide-react";
+import { LogOut, Plus } from "lucide-react";
 import {
   collection,
   getDocs,
@@ -27,10 +27,13 @@ import { Logo } from "./icons";
 import { TaskList } from "./task-list";
 import { TaskProgress } from "./task-progress";
 import { initialTasks } from "@/lib/data";
+import { useAuth, type User } from "@/hooks/use-auth";
 
-type DashboardProps = {};
+type DashboardProps = {
+  user: User;
+};
 
-export function Dashboard({}: DashboardProps) {
+export function Dashboard({ user }: DashboardProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -38,31 +41,43 @@ export function Dashboard({}: DashboardProps) {
   const [activeTimer, setActiveTimer] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { signOut } = useAuth();
   
   const tasksCollectionRef = collection(db, "tasks");
 
-  const fetchTasks = useCallback(async (date: Date) => {
+  const fetchTasks = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Fetch all tasks for summary data (progress, calendar markers)
-      const allTasksSnapshot = await getDocs(tasksCollectionRef);
-      if (allTasksSnapshot.empty) {
-        // If no tasks in Firestore, populate with initial data
-        const batch = writeBatch(db);
-        initialTasks.forEach(task => {
-          const { id, ...taskData } = task; // Exclude the static ID
-          const docRef = doc(tasksCollectionRef); // Let Firestore generate ID
-          batch.set(docRef, {
-            ...taskData,
-            dueDate: Timestamp.fromDate(taskData.dueDate)
+      const q = query(tasksCollectionRef, where("userId", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+      
+      // Check if user has any tasks, if not, seed with initial data
+      if (querySnapshot.empty) {
+        const userHasSeededQuery = query(collection(db, "userFlags"), where("userId", "==", user.uid), where("hasSeededTasks", "==", true));
+        const userHasSeededSnapshot = await getDocs(userHasSeededQuery);
+
+        if (userHasSeededSnapshot.empty) {
+          const batch = writeBatch(db);
+          initialTasks.forEach(task => {
+            const { id, ...taskData } = task;
+            const docRef = doc(tasksCollectionRef);
+            batch.set(docRef, {
+              ...taskData,
+              userId: user.uid,
+              dueDate: Timestamp.fromDate(taskData.dueDate)
+            });
           });
-        });
-        await batch.commit();
-        if (selectedDate) fetchTasks(selectedDate); // Re-fetch after seeding
-        return;
+          
+          const userFlagRef = doc(collection(db, "userFlags"));
+          batch.set(userFlagRef, { userId: user.uid, hasSeededTasks: true });
+
+          await batch.commit();
+          fetchTasks(); // Re-fetch after seeding
+          return;
+        }
       }
       
-      const allTasksData = allTasksSnapshot.docs.map(doc => {
+      const tasksData = querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -70,7 +85,7 @@ export function Dashboard({}: DashboardProps) {
           dueDate: (data.dueDate as Timestamp).toDate(),
         } as Task;
       });
-      setTasks(allTasksData);
+      setTasks(tasksData);
 
     } catch (error) {
       console.error("Error fetching tasks: ", error);
@@ -82,33 +97,22 @@ export function Dashboard({}: DashboardProps) {
     } finally {
         setIsLoading(false);
     }
-  }, [toast, selectedDate]);
+  }, [user.uid, toast, tasksCollectionRef]);
 
   useEffect(() => {
-    if (selectedDate) {
-      fetchTasks(selectedDate);
-    }
-  }, [fetchTasks, selectedDate]);
-
-  useEffect(() => {
-    const tasksDueToday = tasks.filter(task => !task.isCompleted && isToday(task.dueDate));
-    if (tasksDueToday.length > 0 && !isLoading) {
-      toast({
-        title: "Upcoming Deadlines",
-        description: `You have ${tasksDueToday.length} task${tasksDueToday.length > 1 ? 's' : ''} due today.`,
-      });
-    }
-  }, [tasks, toast, isLoading]);
+    fetchTasks();
+  }, [fetchTasks]);
 
   const handleAddTask = async (newTaskData: Omit<Task, 'id' | 'isCompleted' | 'timeSpent'>) => {
     try {
       const docRef = await addDoc(tasksCollectionRef, {
         ...newTaskData,
+        userId: user.uid,
         isCompleted: false,
         timeSpent: 0,
         dueDate: Timestamp.fromDate(newTaskData.dueDate),
       });
-      const newTask = { ...newTaskData, id: docRef.id, isCompleted: false, timeSpent: 0 };
+      const newTask = { ...newTaskData, id: docRef.id, isCompleted: false, timeSpent: 0, userId: user.uid };
       setTasks(prev => [...prev, newTask]);
       toast({ title: "Task Created", description: `"${newTask.title}" has been added.` });
     } catch (error) {
@@ -214,10 +218,16 @@ export function Dashboard({}: DashboardProps) {
           <Logo className="h-8 w-8 text-primary" />
           <h1 className="text-xl font-bold tracking-tight">TaskWise</h1>
         </div>
-        <Button onClick={handleAddNewTaskClick}>
-          <Plus className="-ml-1 mr-2 h-4 w-4" />
-          Add Task
-        </Button>
+        <div className="flex items-center gap-2">
+            <Button onClick={handleAddNewTaskClick}>
+                <Plus className="-ml-1 mr-2 h-4 w-4" />
+                Add Task
+            </Button>
+            <Button variant="outline" onClick={signOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+            </Button>
+        </div>
       </header>
       
       <main className="flex-1 overflow-auto p-4 md:p-6">
