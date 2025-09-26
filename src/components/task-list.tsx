@@ -1,8 +1,8 @@
+// src/components/task-list.tsx
 "use client";
 
 import type { Task } from "@/lib/types";
 import { TaskItem } from "./task-item";
-import { Skeleton } from "./ui/skeleton";
 
 type TaskListProps = {
   tasks: Task[];
@@ -12,7 +12,6 @@ type TaskListProps = {
   activeTimer: string | null;
   setActiveTimer: (id: string | null) => void;
   updateTaskTime: (id: string, time: number) => void;
-  isLoading: boolean;
 };
 
 export function TaskList({ 
@@ -23,18 +22,7 @@ export function TaskList({
   activeTimer,
   setActiveTimer,
   updateTaskTime,
-  isLoading
 }: TaskListProps) {
-  if (isLoading) {
-    return (
-      <div className="space-y-3">
-        <Skeleton className="h-[150px] w-full rounded-lg" />
-        <Skeleton className="h-[150px] w-full rounded-lg" />
-        <Skeleton className="h-[150px] w-full rounded-lg" />
-      </div>
-    );
-  }
-
   if (tasks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted bg-muted/20 p-8 text-center h-full min-h-[300px]">

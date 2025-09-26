@@ -1,7 +1,8 @@
+// src/components/dashboard.tsx
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { format, isSameDay, isToday } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import { LogOut, Plus } from "lucide-react";
 import {
   collection,
@@ -39,19 +40,16 @@ export function Dashboard({ user }: DashboardProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [activeTimer, setActiveTimer] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { signOut } = useAuth();
   
   const tasksCollectionRef = collection(db, "tasks");
 
   const fetchTasks = useCallback(async () => {
-    setIsLoading(true);
     try {
       const q = query(tasksCollectionRef, where("userId", "==", user.uid));
       const querySnapshot = await getDocs(q);
       
-      // Check if user has any tasks, if not, seed with initial data
       if (querySnapshot.empty) {
         const userHasSeededQuery = query(collection(db, "userFlags"), where("userId", "==", user.uid), where("hasSeededTasks", "==", true));
         const userHasSeededSnapshot = await getDocs(userHasSeededQuery);
@@ -59,16 +57,16 @@ export function Dashboard({ user }: DashboardProps) {
         if (userHasSeededSnapshot.empty) {
           const batch = writeBatch(db);
           initialTasks.forEach(task => {
-            const { id, ...taskData } = task;
-            const docRef = doc(tasksCollectionRef);
+            const docRef = doc(tasksCollectionRef); // Create a new doc reference
             batch.set(docRef, {
-              ...taskData,
+              ...task,
+              id: docRef.id, // Store the generated ID in the document
               userId: user.uid,
-              dueDate: Timestamp.fromDate(taskData.dueDate)
+              dueDate: Timestamp.fromDate(task.dueDate),
             });
           });
           
-          const userFlagRef = doc(collection(db, "userFlags"));
+          const userFlagRef = doc(collection(db, "userFlags"), user.uid);
           batch.set(userFlagRef, { userId: user.uid, hasSeededTasks: true });
 
           await batch.commit();
@@ -94,16 +92,16 @@ export function Dashboard({ user }: DashboardProps) {
         description: "Failed to fetch tasks from Firestore.",
         variant: "destructive",
       });
-    } finally {
-        setIsLoading(false);
     }
   }, [user.uid, toast, tasksCollectionRef]);
 
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    if(user) {
+        fetchTasks();
+    }
+  }, [user, fetchTasks]);
 
-  const handleAddTask = async (newTaskData: Omit<Task, 'id' | 'isCompleted' | 'timeSpent'>) => {
+  const handleAddTask = async (newTaskData: Omit<Task, 'id' | 'isCompleted' | 'timeSpent' | 'userId'>) => {
     try {
       const docRef = await addDoc(tasksCollectionRef, {
         ...newTaskData,
@@ -112,7 +110,7 @@ export function Dashboard({ user }: DashboardProps) {
         timeSpent: 0,
         dueDate: Timestamp.fromDate(newTaskData.dueDate),
       });
-      const newTask = { ...newTaskData, id: docRef.id, isCompleted: false, timeSpent: 0, userId: user.uid };
+      const newTask: Task = { ...newTaskData, id: docRef.id, isCompleted: false, timeSpent: 0, userId: user.uid };
       setTasks(prev => [...prev, newTask]);
       toast({ title: "Task Created", description: `"${newTask.title}" has been added.` });
     } catch (error) {
@@ -261,7 +259,6 @@ export function Dashboard({ user }: DashboardProps) {
                 activeTimer={activeTimer}
                 setActiveTimer={setActiveTimer}
                 updateTaskTime={updateTaskTime}
-                isLoading={isLoading}
               />
             </div>
           </section>

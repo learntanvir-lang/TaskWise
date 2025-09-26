@@ -1,8 +1,8 @@
 import type { Task } from "./types";
 
-export const initialTasks: Task[] = [
+// Note: id and userId will be replaced by Firestore
+export const initialTasks: Omit<Task, 'id' | 'userId'>[] = [
   {
-    id: "1",
     title: "Finish project proposal",
     description: "Complete the final draft for the Q3 project proposal.",
     dueDate: new Date(new Date().setDate(new Date().getDate() + 2)),
@@ -12,7 +12,6 @@ export const initialTasks: Task[] = [
     timeSpent: 0,
   },
   {
-    id: "2",
     title: "Buy groceries",
     description: "Milk, bread, cheese, and eggs.",
     dueDate: new Date(),
@@ -22,7 +21,6 @@ export const initialTasks: Task[] = [
     timeSpent: 0,
   },
   {
-    id: "3",
     title: "Schedule dentist appointment",
     description: "Annual check-up.",
     dueDate: new Date(new Date().setDate(new Date().getDate() + 10)),
@@ -32,7 +30,6 @@ export const initialTasks: Task[] = [
     timeSpent: 0,
   },
   {
-    id: "4",
     title: "Team meeting",
     description: "Weekly sync-up with the development team.",
     dueDate: new Date(new Date().setDate(new Date().getDate() + 1)),
@@ -42,7 +39,6 @@ export const initialTasks: Task[] = [
     timeSpent: 3600, // 1 hour
   },
   {
-    id: "5",
     title: "Call Mom",
     description: "Catch up with mom.",
     dueDate: new Date(),
@@ -52,7 +48,6 @@ export const initialTasks: Task[] = [
     timeSpent: 900, // 15 minutes
   },
   {
-    id: "6",
     title: "Renew gym membership",
     description: "Membership expires at the end of the month.",
     dueDate: new Date(new Date().setDate(new Date().getDate() + 5)),

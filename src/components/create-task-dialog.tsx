@@ -1,3 +1,4 @@
+// src/components/create-task-dialog.tsx
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
@@ -66,7 +67,7 @@ type TaskFormValues = z.infer<typeof taskSchema>;
 type CreateTaskDialogProps = {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  onTaskCreate: (task: Omit<Task, 'id' | 'isCompleted' | 'timeSpent'>) => void;
+  onTaskCreate: (task: Omit<Task, 'id' | 'isCompleted' | 'timeSpent' | 'userId'>) => void;
   onTaskUpdate: (task: Task) => void;
   taskToEdit: Task | null;
 };
@@ -108,7 +109,8 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
         customCategory: "",
       });
     }
-  }, [taskToEdit, form, isOpen]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskToEdit, isOpen]);
 
   const handleSuggestPriority = async () => {
     const { title, description, dueDate } = form.getValues();
@@ -148,8 +150,6 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
         onTaskCreate(taskData);
     }
     setIsOpen(false);
-    form.reset();
-    setAiSuggestion(null);
   }
   
   const handleOpenChange = (open: boolean) => {
