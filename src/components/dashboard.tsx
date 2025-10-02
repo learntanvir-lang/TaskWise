@@ -28,7 +28,6 @@ import { CreateTaskDialog } from "./create-task-dialog";
 import { Logo } from "./icons";
 import { TaskList } from "./task-list";
 import { TaskProgress } from "./task-progress";
-import { initialTasks } from "@/lib/data";
 import { useAuth, type User } from "@/hooks/use-auth";
 import { TimeLogDialog } from "./time-log-dialog";
 
@@ -52,35 +51,6 @@ export function Dashboard({ user }: DashboardProps) {
     try {
       const q = query(tasksCollectionRef, where("userId", "==", user.uid));
       const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
-        const userHasSeededQuery = query(
-          collection(db, "userFlags"),
-          where("userId", "==", user.uid),
-          where("hasSeededTasks", "==", true)
-        );
-        const userHasSeededSnapshot = await getDocs(userHasSeededQuery);
-
-        if (userHasSeededSnapshot.empty) {
-          const batch = writeBatch(db);
-          initialTasks.forEach(task => {
-            const docRef = doc(tasksCollectionRef); // Create a new doc reference
-            batch.set(docRef, {
-              ...task,
-              userId: user.uid,
-              dueDate: Timestamp.fromDate(task.dueDate),
-              timeEntries: task.timeEntries?.map(entry => ({ ...entry, startTime: Timestamp.fromDate(entry.startTime), endTime: Timestamp.fromDate(entry.endTime) })) || []
-            });
-          });
-
-          const userFlagRef = doc(collection(db, "userFlags"), user.uid);
-          batch.set(userFlagRef, { userId: user.uid, hasSeededTasks: true });
-
-          await batch.commit();
-          fetchTasks(); // Re-fetch after seeding
-          return;
-        }
-      }
 
       const tasksData = querySnapshot.docs.map(doc => {
         const data = doc.data();
@@ -197,7 +167,7 @@ export function Dashboard({ user }: DashboardProps) {
         duration,
     };
 
-    const newTotalTime = task.timeSpent + duration;
+    const newTotalTime = (task.timeSpent || 0) + duration;
 
     try {
         const taskDoc = doc(db, "tasks", taskId);
