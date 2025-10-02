@@ -88,7 +88,9 @@ export function Dashboard({ user }: DashboardProps) {
           id: doc.id,
           ...data,
           dueDate: (data.dueDate as Timestamp).toDate(),
-          timeEntries: data.timeEntries?.map((entry: any) => ({...entry, date: (entry.date as Timestamp).toDate()})) || [],
+          timeEntries: data.timeEntries?.map((entry: any) => (
+            entry && entry.date ? { ...entry, date: (entry.date as Timestamp).toDate() } : entry
+          )).filter(Boolean) || [],
         } as Task;
       });
       setTasks(tasksData);
