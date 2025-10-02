@@ -16,7 +16,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import type { Task } from "@/lib/types";
+import type { Task, TimeEntry } from "@/lib/types";
 import { format } from "date-fns";
 
 type TimeLogDialogProps = {
@@ -42,7 +42,9 @@ const formatDuration = (totalSeconds: number) => {
 export function TimeLogDialog({ isOpen, setIsOpen, task }: TimeLogDialogProps) {
     if (!task) return null;
 
-    const sortedTimeEntries = [...(task.timeEntries || [])].sort((a,b) => b.startTime.getTime() - a.startTime.getTime());
+    const sortedTimeEntries = [...(task.timeEntries || [])]
+      .filter((entry): entry is TimeEntry & { startTime: Date; endTime: Date } => !!entry.startTime && !!entry.endTime)
+      .sort((a,b) => b.startTime.getTime() - a.startTime.getTime());
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
