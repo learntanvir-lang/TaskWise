@@ -4,17 +4,18 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type TaskProgressProps = {
+  title?: string;
   totalTasks: number;
   completedTasks: number;
 };
 
-export function TaskProgress({ totalTasks, completedTasks }: TaskProgressProps) {
+export function TaskProgress({ title = "Progress", totalTasks, completedTasks }: TaskProgressProps) {
   const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium">Progress</CardTitle>
+        <CardTitle className="text-base font-medium">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between">

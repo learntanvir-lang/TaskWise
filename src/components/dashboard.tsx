@@ -60,7 +60,6 @@ export function Dashboard({ user }: DashboardProps) {
             const docRef = doc(tasksCollectionRef); // Create a new doc reference
             batch.set(docRef, {
               ...task,
-              id: docRef.id, // Store the generated ID in the document
               userId: user.uid,
               dueDate: Timestamp.fromDate(task.dueDate),
             });
@@ -196,7 +195,7 @@ export function Dashboard({ user }: DashboardProps) {
       .sort((a, b) => (a.isCompleted ? 1 : -1) - (b.isCompleted ? 1 : -1) || a.title.localeCompare(b.title));
   }, [tasks, selectedDate]);
   
-  const completedTasksCount = useMemo(() => tasks.filter(t => t.isCompleted).length, [tasks]);
+  const completedTasksForSelectedDay = useMemo(() => tasksForSelectedDay.filter(t => t.isCompleted).length, [tasksForSelectedDay]);
 
   const taskDateModifiers = {
     taskDays: tasks.filter(t => !t.isCompleted).map(t => t.dueDate),
@@ -230,7 +229,11 @@ export function Dashboard({ user }: DashboardProps) {
       <main className="flex-1 overflow-auto p-4 md:p-6">
         <div className="grid lg:grid-cols-[350px_1fr] xl:grid-cols-[400px_1fr] gap-6 max-w-7xl mx-auto">
           <aside className="space-y-6 lg:sticky lg:top-6">
-            <TaskProgress totalTasks={tasks.length} completedTasks={completedTasksCount} />
+            <TaskProgress 
+              title="Today's Progress"
+              totalTasks={tasksForSelectedDay.length} 
+              completedTasks={completedTasksForSelectedDay} 
+            />
             <Card>
               <CardContent className="p-1">
                 <Calendar
