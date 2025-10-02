@@ -1,6 +1,11 @@
 export type TaskPriority = "low" | "medium" | "high";
 export type TaskCategory = string;
 
+export type TimeEntry = {
+  date: Date;
+  duration: number; // in seconds
+};
+
 export type Task = {
   id: string;
   userId: string;
@@ -11,6 +16,7 @@ export type Task = {
   category: TaskCategory;
   isCompleted: boolean;
   timeSpent: number; // in seconds
+  timeEntries?: TimeEntry[]; // Array of time entries
 };
 
 export const priorities: TaskPriority[] = ["low", "medium", "high"];

@@ -41,6 +41,7 @@ type TaskItemProps = {
   setActiveTimer: (id: string | null) => void;
   updateTaskTime: (id: string, time: number) => void;
   isAnotherTimerActive: boolean;
+  onTimeLogClick: (task: Task) => void;
 };
 
 const priorityIcons: Record<TaskPriority, React.ReactNode> = {
@@ -76,7 +77,8 @@ export function TaskItem({
   isTimerActive,
   setActiveTimer,
   updateTaskTime,
-  isAnotherTimerActive
+  isAnotherTimerActive,
+  onTimeLogClick
 }: TaskItemProps) {
   const { toast } = useToast();
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -97,7 +99,9 @@ export function TaskItem({
   const handleTimerToggle = useCallback(() => {
     if (isTimerActive) {
       // Stop timer
-      updateTaskTime(task.id, elapsedTime);
+      if (elapsedTime > 0) {
+        updateTaskTime(task.id, elapsedTime);
+      }
       setActiveTimer(null);
       setElapsedTime(0);
       toast({ title: "Timer Stopped", description: `Time logged for "${task.title}".` });
@@ -194,7 +198,12 @@ export function TaskItem({
           <span className="ml-1">{task.category}</span>
         </Badge>
         {(totalTime > 0) && (
-            <Badge variant="outline" className="text-xs">
+            <Badge 
+              variant="outline"
+              className="text-xs cursor-pointer"
+              onClick={() => onTimeLogClick(task)}
+              aria-label="View time log"
+            >
                 <Clock className="mr-1 h-3 w-3" />
                 {formatTime(totalTime)}
             </Badge>

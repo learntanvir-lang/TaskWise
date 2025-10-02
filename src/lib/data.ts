@@ -1,4 +1,4 @@
-import type { Task } from "./types";
+import type { Task, TimeEntry } from "./types";
 
 // Note: id and userId will be replaced by Firestore
 export const initialTasks: Omit<Task, 'id' | 'userId'>[] = [
@@ -10,6 +10,7 @@ export const initialTasks: Omit<Task, 'id' | 'userId'>[] = [
     category: "work",
     isCompleted: false,
     timeSpent: 0,
+    timeEntries: [],
   },
   {
     title: "Buy groceries",
@@ -19,6 +20,7 @@ export const initialTasks: Omit<Task, 'id' | 'userId'>[] = [
     category: "shopping",
     isCompleted: false,
     timeSpent: 0,
+    timeEntries: [],
   },
   {
     title: "Schedule dentist appointment",
@@ -28,6 +30,7 @@ export const initialTasks: Omit<Task, 'id' | 'userId'>[] = [
     category: "personal",
     isCompleted: false,
     timeSpent: 0,
+    timeEntries: [],
   },
   {
     title: "Team meeting",
@@ -37,6 +40,7 @@ export const initialTasks: Omit<Task, 'id' | 'userId'>[] = [
     category: "work",
     isCompleted: true,
     timeSpent: 3600, // 1 hour
+    timeEntries: [{ date: new Date(new Date().setDate(new Date().getDate() + 1)), duration: 3600 }],
   },
   {
     title: "Call Mom",
@@ -46,6 +50,7 @@ export const initialTasks: Omit<Task, 'id' | 'userId'>[] = [
     category: "personal",
     isCompleted: true,
     timeSpent: 900, // 15 minutes
+    timeEntries: [{ date: new Date(), duration: 900 }],
   },
   {
     title: "Renew gym membership",
@@ -55,5 +60,6 @@ export const initialTasks: Omit<Task, 'id' | 'userId'>[] = [
     category: "personal",
     isCompleted: false,
     timeSpent: 0,
+    timeEntries: [],
   },
 ];

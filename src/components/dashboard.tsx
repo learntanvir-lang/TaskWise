@@ -15,10 +15,11 @@ import {
   query,
   where,
   writeBatch,
+  arrayUnion,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
-import type { Task } from "@/lib/types";
+import type { Task, TimeEntry } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -29,6 +30,7 @@ import { TaskList } from "./task-list";
 import { TaskProgress } from "./task-progress";
 import { initialTasks } from "@/lib/data";
 import { useAuth, type User } from "@/hooks/use-auth";
+import { TimeLogDialog } from "./time-log-dialog";
 
 type DashboardProps = {
   user: User;
@@ -42,16 +44,21 @@ export function Dashboard({ user }: DashboardProps) {
   const [activeTimer, setActiveTimer] = useState<string | null>(null);
   const { toast } = useToast();
   const { signOut } = useAuth();
-  
+  const [timeLogTask, setTimeLogTask] = useState<Task | null>(null);
+
   const tasksCollectionRef = collection(db, "tasks");
 
   const fetchTasks = useCallback(async () => {
     try {
       const q = query(tasksCollectionRef, where("userId", "==", user.uid));
       const querySnapshot = await getDocs(q);
-      
+
       if (querySnapshot.empty) {
-        const userHasSeededQuery = query(collection(db, "userFlags"), where("userId", "==", user.uid), where("hasSeededTasks", "==", true));
+        const userHasSeededQuery = query(
+          collection(db, "userFlags"),
+          where("userId", "==", user.uid),
+          where("hasSeededTasks", "==", true)
+        );
         const userHasSeededSnapshot = await getDocs(userHasSeededQuery);
 
         if (userHasSeededSnapshot.empty) {
@@ -62,9 +69,10 @@ export function Dashboard({ user }: DashboardProps) {
               ...task,
               userId: user.uid,
               dueDate: Timestamp.fromDate(task.dueDate),
+              timeEntries: task.timeEntries?.map(entry => ({ ...entry, date: Timestamp.fromDate(entry.date) })) || []
             });
           });
-          
+
           const userFlagRef = doc(collection(db, "userFlags"), user.uid);
           batch.set(userFlagRef, { userId: user.uid, hasSeededTasks: true });
 
@@ -73,17 +81,17 @@ export function Dashboard({ user }: DashboardProps) {
           return;
         }
       }
-      
+
       const tasksData = querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
           ...data,
           dueDate: (data.dueDate as Timestamp).toDate(),
+          timeEntries: data.timeEntries?.map((entry: any) => ({...entry, date: (entry.date as Timestamp).toDate()})) || [],
         } as Task;
       });
       setTasks(tasksData);
-
     } catch (error) {
       console.error("Error fetching tasks: ", error);
       toast({
@@ -95,8 +103,8 @@ export function Dashboard({ user }: DashboardProps) {
   }, [user.uid, toast, tasksCollectionRef]);
 
   useEffect(() => {
-    if(user) {
-        fetchTasks();
+    if (user) {
+      fetchTasks();
     }
   }, [user, fetchTasks]);
 
@@ -107,6 +115,7 @@ export function Dashboard({ user }: DashboardProps) {
         userId: user.uid,
         isCompleted: false,
         timeSpent: 0,
+        timeEntries: [],
         dueDate: Timestamp.fromDate(newTaskData.dueDate),
       });
       await fetchTasks();
@@ -116,7 +125,7 @@ export function Dashboard({ user }: DashboardProps) {
       toast({ title: "Error", description: "Failed to create task.", variant: "destructive" });
     }
   };
-  
+
   const handleUpdateTask = async (updatedTask: Task) => {
     try {
       const taskDoc = doc(db, "tasks", updatedTask.id);
@@ -125,17 +134,17 @@ export function Dashboard({ user }: DashboardProps) {
         ...taskData,
         dueDate: Timestamp.fromDate(taskData.dueDate)
       });
-      setTasks(prev => prev.map(task => task.id === updatedTask.id ? updatedTask : task));
+      await fetchTasks(); // Re-fetch to get the most accurate data
       toast({ title: "Task Updated", description: `"${updatedTask.title}" has been updated.` });
       setTaskToEdit(null);
     } catch (error) {
       console.error("Error updating task: ", error);
       toast({ title: "Error", description: "Failed to update task.", variant: "destructive" });
     }
-  }
+  };
 
   const handleToggleComplete = async (id: string, isCompleted: boolean) => {
-     try {
+    try {
       const taskDoc = doc(db, "tasks", id);
       await updateDoc(taskDoc, { isCompleted });
       setTasks(prev => prev.map(task => (task.id === id ? { ...task, isCompleted } : task)));
@@ -144,18 +153,18 @@ export function Dashboard({ user }: DashboardProps) {
       toast({ title: "Error", description: "Failed to update task status.", variant: "destructive" });
     }
   };
-  
+
   const handleDeleteTask = async (id: string) => {
     const taskToDelete = tasks.find(t => t.id === id);
     try {
-        await deleteDoc(doc(db, "tasks", id));
-        setTasks(prev => prev.filter(task => task.id !== id));
-        if (taskToDelete) {
-            toast({ title: "Task Deleted", description: `"${taskToDelete.title}" has been removed.`, variant: 'destructive'});
-        }
-    } catch(error) {
-        console.error("Error deleting task: ", error);
-        toast({ title: "Error", description: "Failed to delete task.", variant: "destructive" });
+      await deleteDoc(doc(db, "tasks", id));
+      setTasks(prev => prev.filter(task => task.id !== id));
+      if (taskToDelete) {
+        toast({ title: "Task Deleted", description: `"${taskToDelete.title}" has been removed.`, variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error("Error deleting task: ", error);
+      toast({ title: "Error", description: "Failed to delete task.", variant: "destructive" });
     }
   };
 
@@ -163,25 +172,39 @@ export function Dashboard({ user }: DashboardProps) {
     setTaskToEdit(task);
     setIsDialogOpen(true);
   }
-  
+
   const handleAddNewTaskClick = () => {
     setTaskToEdit(null);
     setIsDialogOpen(true);
   }
-  
-  const updateTaskTime = useCallback(async (taskId: string, time: number) => {
+
+  const updateTaskTime = useCallback(async (taskId: string, duration: number) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
-    const newTimeSpent = task.timeSpent + time;
+    const newTimeEntry: Omit<TimeEntry, 'date'> & { date: Timestamp } = {
+        date: Timestamp.now(),
+        duration: duration
+    };
+
+    const newTotalTime = task.timeSpent + duration;
+
     try {
-      const taskDoc = doc(db, "tasks", taskId);
-      await updateDoc(taskDoc, { timeSpent: newTimeSpent });
-      setTasks(prevTasks =>
-        prevTasks.map(t =>
-          t.id === taskId ? { ...t, timeSpent: newTimeSpent } : t
-        )
-      );
+        const taskDoc = doc(db, "tasks", taskId);
+        await updateDoc(taskDoc, {
+            timeSpent: newTotalTime,
+            timeEntries: arrayUnion(newTimeEntry)
+        });
+        
+        setTasks(prevTasks =>
+            prevTasks.map(t =>
+                t.id === taskId ? { 
+                    ...t, 
+                    timeSpent: newTotalTime,
+                    timeEntries: [...(t.timeEntries || []), { date: newTimeEntry.date.toDate(), duration: newTimeEntry.duration }]
+                } : t
+            )
+        );
     } catch (error) {
         console.error("Error updating task time: ", error);
         toast({ title: "Error", description: "Failed to log time.", variant: "destructive" });
@@ -194,14 +217,14 @@ export function Dashboard({ user }: DashboardProps) {
       .filter((task) => isSameDay(task.dueDate, selectedDate))
       .sort((a, b) => (a.isCompleted ? 1 : -1) - (b.isCompleted ? 1 : -1) || a.title.localeCompare(b.title));
   }, [tasks, selectedDate]);
-  
+
   const completedTasksForSelectedDay = useMemo(() => tasksForSelectedDay.filter(t => t.isCompleted).length, [tasksForSelectedDay]);
 
   const taskDateModifiers = {
     taskDays: tasks.filter(t => !t.isCompleted).map(t => t.dueDate),
     completedTaskDays: tasks.filter(t => t.isCompleted).map(t => t.dueDate)
   };
-  
+
   const taskDateModifiersClassNames = {
     taskDays: 'has-task',
     completedTaskDays: 'has-completed-task'
@@ -215,24 +238,24 @@ export function Dashboard({ user }: DashboardProps) {
           <h1 className="text-xl font-bold tracking-tight">TaskWise</h1>
         </div>
         <div className="flex items-center gap-2">
-            <Button onClick={handleAddNewTaskClick}>
-                <Plus className="-ml-1 mr-2 h-4 w-4" />
-                Add Task
-            </Button>
-            <Button variant="outline" onClick={signOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
-            </Button>
+          <Button onClick={handleAddNewTaskClick}>
+            <Plus className="-ml-1 mr-2 h-4 w-4" />
+            Add Task
+          </Button>
+          <Button variant="outline" onClick={signOut}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
         </div>
       </header>
-      
+
       <main className="flex-1 overflow-auto p-4 md:p-6">
         <div className="grid lg:grid-cols-[350px_1fr] xl:grid-cols-[400px_1fr] gap-6 max-w-7xl mx-auto">
           <aside className="space-y-6 lg:sticky lg:top-6">
-            <TaskProgress 
+            <TaskProgress
               title="Today's Progress"
-              totalTasks={tasksForSelectedDay.length} 
-              completedTasks={completedTasksForSelectedDay} 
+              totalTasks={tasksForSelectedDay.length}
+              completedTasks={completedTasksForSelectedDay}
             />
             <Card>
               <CardContent className="p-1">
@@ -247,34 +270,41 @@ export function Dashboard({ user }: DashboardProps) {
               </CardContent>
             </Card>
           </aside>
-          
+
           <section className="min-w-0">
             <h2 className="text-2xl font-bold mb-4">
               Tasks for {selectedDate ? format(selectedDate, "PPP") : '...'}
             </h2>
             <div className="h-full">
-              <TaskList 
-                tasks={tasksForSelectedDay} 
+              <TaskList
+                tasks={tasksForSelectedDay}
                 onToggleComplete={handleToggleComplete}
                 onDelete={handleDeleteTask}
                 onEdit={handleEditTask}
                 activeTimer={activeTimer}
                 setActiveTimer={setActiveTimer}
                 updateTaskTime={updateTaskTime}
+                onTimeLogClick={setTimeLogTask}
               />
             </div>
           </section>
         </div>
       </main>
 
-      <CreateTaskDialog 
-        isOpen={isDialogOpen} 
+      <CreateTaskDialog
+        isOpen={isDialogOpen}
         setIsOpen={setIsDialogOpen}
         onTaskCreate={handleAddTask}
         onTaskUpdate={handleUpdateTask}
         taskToEdit={taskToEdit}
       />
-      
+
+      <TimeLogDialog
+        task={timeLogTask}
+        isOpen={!!timeLogTask}
+        setIsOpen={(isOpen) => !isOpen && setTimeLogTask(null)}
+      />
+
       <style jsx global>{`
         .has-task {
             position: relative;

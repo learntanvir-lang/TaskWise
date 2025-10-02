@@ -12,6 +12,7 @@ type TaskListProps = {
   activeTimer: string | null;
   setActiveTimer: (id: string | null) => void;
   updateTaskTime: (id: string, time: number) => void;
+  onTimeLogClick: (task: Task) => void;
 };
 
 export function TaskList({ 
@@ -22,6 +23,7 @@ export function TaskList({
   activeTimer,
   setActiveTimer,
   updateTaskTime,
+  onTimeLogClick,
 }: TaskListProps) {
   if (tasks.length === 0) {
     return (
@@ -45,6 +47,7 @@ export function TaskList({
               setActiveTimer={setActiveTimer}
               updateTaskTime={updateTaskTime}
               isAnotherTimerActive={activeTimer !== null && activeTimer !== task.id}
+              onTimeLogClick={onTimeLogClick}
             />
         ))}
     </div>
