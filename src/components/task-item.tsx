@@ -39,7 +39,7 @@ type TaskItemProps = {
   onEdit: (task: Task) => void;
   isTimerActive: boolean;
   setActiveTimer: (id: string | null) => void;
-  updateTaskTime: (id: string, time: number, startTime: Date) => void;
+  updateTaskTime: (id: string, startTime: Date) => void;
   isAnotherTimerActive: boolean;
   onTimeLogClick: (task: Task) => void;
 };
@@ -100,8 +100,8 @@ export function TaskItem({
   const handleTimerToggle = useCallback(() => {
     if (isTimerActive) {
       // Stop timer
-      if (elapsedTime > 0 && timerStartTimeRef.current) {
-        updateTaskTime(task.id, elapsedTime, timerStartTimeRef.current);
+      if (timerStartTimeRef.current) {
+        updateTaskTime(task.id, timerStartTimeRef.current);
       }
       setActiveTimer(null);
       setElapsedTime(0);
@@ -117,7 +117,7 @@ export function TaskItem({
       setActiveTimer(task.id);
       toast({ title: "Timer Started", description: `Timing task "${task.title}".` });
     }
-  }, [isTimerActive, isAnotherTimerActive, task.id, task.title, elapsedTime, setActiveTimer, updateTaskTime, toast]);
+  }, [isTimerActive, isAnotherTimerActive, task.id, task.title, setActiveTimer, updateTaskTime, toast]);
   
   const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600);

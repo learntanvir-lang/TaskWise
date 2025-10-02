@@ -184,11 +184,13 @@ export function Dashboard({ user }: DashboardProps) {
     setIsDialogOpen(true);
   }
 
-  const updateTaskTime = useCallback(async (taskId: string, duration: number, startTime: Date) => {
+  const updateTaskTime = useCallback(async (taskId: string, startTime: Date) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
     const endTime = new Date();
+    const duration = Math.round((endTime.getTime() - startTime.getTime()) / 1000); // duration in seconds
+    
     const newTimeEntry = {
         startTime: Timestamp.fromDate(startTime),
         endTime: Timestamp.fromDate(endTime),

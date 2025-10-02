@@ -11,7 +11,7 @@ type TaskListProps = {
   onEdit: (task: Task) => void;
   activeTimer: string | null;
   setActiveTimer: (id: string | null) => void;
-  updateTaskTime: (id: string, time: number) => void;
+  updateTaskTime: (id: string, startTime: Date) => void;
   onTimeLogClick: (task: Task) => void;
 };
 
