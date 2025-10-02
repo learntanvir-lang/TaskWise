@@ -289,7 +289,7 @@ export function Dashboard({ user }: DashboardProps) {
       <TimeLogDialog
         task={timeLogTask}
         isOpen={!!timeLogTask}
-        setIsOpen={(isOpen) => !isOpen && setTimeLog-task(null)}
+        setIsOpen={(isOpen) => !isOpen && setTimeLogTask(null)}
       />
 
       <style jsx global>{`
