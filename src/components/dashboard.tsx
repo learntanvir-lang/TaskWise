@@ -14,7 +14,6 @@ import {
   Timestamp,
   query,
   where,
-  writeBatch,
   arrayUnion,
 } from "firebase/firestore";
 
@@ -30,6 +29,8 @@ import { TaskList } from "./task-list";
 import { TaskProgress } from "./task-progress";
 import { useAuth, type User } from "@/hooks/use-auth";
 import { TimeLogDialog } from "./time-log-dialog";
+import { errorEmitter } from "@/lib/error-emitter";
+import { FirestorePermissionError } from "@/lib/errors";
 
 type DashboardProps = {
   user: User;
@@ -85,63 +86,82 @@ export function Dashboard({ user }: DashboardProps) {
   }, [user, fetchTasks]);
 
   const handleAddTask = async (newTaskData: Omit<Task, 'id' | 'isCompleted' | 'timeSpent' | 'userId'>) => {
-    try {
-      await addDoc(tasksCollectionRef, {
+    const dataToSave = {
         ...newTaskData,
         userId: user.uid,
         isCompleted: false,
         timeSpent: 0,
         timeEntries: [],
         dueDate: Timestamp.fromDate(newTaskData.dueDate),
-      });
-      await fetchTasks();
-      toast({ title: "Task Created", description: `"${newTaskData.title}" has been added.` });
-    } catch (error) {
-      console.error("Error adding task: ", error);
-      toast({ title: "Error", description: "Failed to create task.", variant: "destructive" });
-    }
+    };
+    addDoc(tasksCollectionRef, dataToSave)
+    .then(async () => {
+        await fetchTasks();
+        toast({ title: "Task Created", description: `"${newTaskData.title}" has been added.` });
+    })
+    .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: tasksCollectionRef.path,
+          operation: 'create',
+          requestResourceData: dataToSave,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
   };
 
   const handleUpdateTask = async (updatedTask: Task) => {
-    try {
-      const taskDoc = doc(db, "tasks", updatedTask.id);
-      const { id, ...taskData } = updatedTask;
-      await updateDoc(taskDoc, {
+    const taskDoc = doc(db, "tasks", updatedTask.id);
+    const { id, ...taskData } = updatedTask;
+    const dataToSave = {
         ...taskData,
         dueDate: Timestamp.fromDate(taskData.dueDate)
-      });
-      await fetchTasks(); // Re-fetch to get the most accurate data
-      toast({ title: "Task Updated", description: `"${updatedTask.title}" has been updated.` });
-      setTaskToEdit(null);
-    } catch (error) {
-      console.error("Error updating task: ", error);
-      toast({ title: "Error", description: "Failed to update task.", variant: "destructive" });
-    }
+    };
+    updateDoc(taskDoc, dataToSave)
+    .then(async () => {
+        await fetchTasks(); // Re-fetch to get the most accurate data
+        toast({ title: "Task Updated", description: `"${updatedTask.title}" has been updated.` });
+        setTaskToEdit(null);
+    }).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: taskDoc.path,
+            operation: 'update',
+            requestResourceData: dataToSave,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
   };
 
   const handleToggleComplete = async (id: string, isCompleted: boolean) => {
-    try {
-      const taskDoc = doc(db, "tasks", id);
-      await updateDoc(taskDoc, { isCompleted });
-      setTasks(prev => prev.map(task => (task.id === id ? { ...task, isCompleted } : task)));
-    } catch (error) {
-      console.error("Error toggling task completion: ", error);
-      toast({ title: "Error", description: "Failed to update task status.", variant: "destructive" });
-    }
+    const taskDoc = doc(db, "tasks", id);
+    updateDoc(taskDoc, { isCompleted })
+    .then(() => {
+        setTasks(prev => prev.map(task => (task.id === id ? { ...task, isCompleted } : task)));
+    }).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: taskDoc.path,
+            operation: 'update',
+            requestResourceData: { isCompleted },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
   };
 
   const handleDeleteTask = async (id: string) => {
     const taskToDelete = tasks.find(t => t.id === id);
-    try {
-      await deleteDoc(doc(db, "tasks", id));
-      setTasks(prev => prev.filter(task => task.id !== id));
-      if (taskToDelete) {
-        toast({ title: "Task Deleted", description: `"${taskToDelete.title}" has been removed.`, variant: 'destructive' });
-      }
-    } catch (error) {
-      console.error("Error deleting task: ", error);
-      toast({ title: "Error", description: "Failed to delete task.", variant: "destructive" });
-    }
+    const taskDoc = doc(db, "tasks", id);
+    deleteDoc(taskDoc)
+    .then(() => {
+        setTasks(prev => prev.filter(task => task.id !== id));
+        if (taskToDelete) {
+            toast({ title: "Task Deleted", description: `"${taskToDelete.title}" has been removed.`, variant: 'destructive' });
+        }
+    }).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: taskDoc.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
   };
 
   const handleEditTask = (task: Task) => {
@@ -169,13 +189,11 @@ export function Dashboard({ user }: DashboardProps) {
 
     const newTotalTime = (task.timeSpent || 0) + duration;
 
-    try {
-        const taskDoc = doc(db, "tasks", taskId);
-        await updateDoc(taskDoc, {
-            timeSpent: newTotalTime,
-            timeEntries: arrayUnion(newTimeEntry)
-        });
-        
+    const taskDoc = doc(db, "tasks", taskId);
+    updateDoc(taskDoc, {
+        timeSpent: newTotalTime,
+        timeEntries: arrayUnion(newTimeEntry)
+    }).then(() => {
         setTasks(prevTasks =>
             prevTasks.map(t =>
                 t.id === taskId ? { 
@@ -189,10 +207,14 @@ export function Dashboard({ user }: DashboardProps) {
                 } : t
             )
         );
-    } catch (error) {
-        console.error("Error updating task time: ", error);
-        toast({ title: "Error", description: "Failed to log time.", variant: "destructive" });
-    }
+    }).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: taskDoc.path,
+            operation: 'update',
+            requestResourceData: { timeSpent: newTotalTime, timeEntries: '...' }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
   }, [tasks, toast]);
 
   const tasksForSelectedDay = useMemo(() => {
