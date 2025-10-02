@@ -6,7 +6,6 @@ import { format, isSameDay } from "date-fns";
 import { LogOut, Plus } from "lucide-react";
 import {
   collection,
-  getDocs,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -15,6 +14,8 @@ import {
   query,
   where,
   arrayUnion,
+  onSnapshot,
+  Unsubscribe,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -46,13 +47,13 @@ export function Dashboard({ user }: DashboardProps) {
   const { signOut } = useAuth();
   const [timeLogTask, setTimeLogTask] = useState<Task | null>(null);
 
-  const tasksCollectionRef = collection(db, "tasks");
+  useEffect(() => {
+    if (!user) return;
 
-  const fetchTasks = useCallback(async () => {
-    try {
-      const q = query(tasksCollectionRef, where("userId", "==", user.uid));
-      const querySnapshot = await getDocs(q);
-
+    const tasksCollectionRef = collection(db, "tasks");
+    const q = query(tasksCollectionRef, where("userId", "==", user.uid));
+    
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const tasksData = querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -69,23 +70,22 @@ export function Dashboard({ user }: DashboardProps) {
         } as Task;
       });
       setTasks(tasksData);
-    } catch (error) {
-      console.error("Error fetching tasks: ", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch tasks from Firestore.",
-        variant: "destructive",
+    }, (error) => {
+      console.error("Error fetching tasks with snapshot: ", error);
+      const permissionError = new FirestorePermissionError({
+        path: tasksCollectionRef.path,
+        operation: 'list',
       });
-    }
-  }, [user.uid, toast, tasksCollectionRef]);
+      errorEmitter.emit('permission-error', permissionError);
+    });
 
-  useEffect(() => {
-    if (user) {
-      fetchTasks();
-    }
-  }, [user, fetchTasks]);
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [user]);
+
 
   const handleAddTask = async (newTaskData: Omit<Task, 'id' | 'isCompleted' | 'timeSpent' | 'userId'>) => {
+    const tasksCollectionRef = collection(db, "tasks");
     const dataToSave = {
         ...newTaskData,
         userId: user.uid,
@@ -95,8 +95,7 @@ export function Dashboard({ user }: DashboardProps) {
         dueDate: Timestamp.fromDate(newTaskData.dueDate),
     };
     addDoc(tasksCollectionRef, dataToSave)
-    .then(async () => {
-        await fetchTasks();
+    .then(() => {
         toast({ title: "Task Created", description: `"${newTaskData.title}" has been added.` });
     })
     .catch(async (serverError) => {
@@ -117,8 +116,7 @@ export function Dashboard({ user }: DashboardProps) {
         dueDate: Timestamp.fromDate(taskData.dueDate)
     };
     updateDoc(taskDoc, dataToSave)
-    .then(async () => {
-        await fetchTasks(); // Re-fetch to get the most accurate data
+    .then(() => {
         toast({ title: "Task Updated", description: `"${updatedTask.title}" has been updated.` });
         setTaskToEdit(null);
     }).catch(async (serverError) => {
@@ -134,9 +132,7 @@ export function Dashboard({ user }: DashboardProps) {
   const handleToggleComplete = async (id: string, isCompleted: boolean) => {
     const taskDoc = doc(db, "tasks", id);
     updateDoc(taskDoc, { isCompleted })
-    .then(() => {
-        setTasks(prev => prev.map(task => (task.id === id ? { ...task, isCompleted } : task)));
-    }).catch(async (serverError) => {
+    .catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: taskDoc.path,
             operation: 'update',
@@ -151,7 +147,6 @@ export function Dashboard({ user }: DashboardProps) {
     const taskDoc = doc(db, "tasks", id);
     deleteDoc(taskDoc)
     .then(() => {
-        setTasks(prev => prev.filter(task => task.id !== id));
         if (taskToDelete) {
             toast({ title: "Task Deleted", description: `"${taskToDelete.title}" has been removed.`, variant: 'destructive' });
         }
@@ -193,20 +188,6 @@ export function Dashboard({ user }: DashboardProps) {
     updateDoc(taskDoc, {
         timeSpent: newTotalTime,
         timeEntries: arrayUnion(newTimeEntry)
-    }).then(() => {
-        setTasks(prevTasks =>
-            prevTasks.map(t =>
-                t.id === taskId ? { 
-                    ...t, 
-                    timeSpent: newTotalTime,
-                    timeEntries: [...(t.timeEntries || []), { 
-                        startTime: newTimeEntry.startTime.toDate(), 
-                        endTime: newTimeEntry.endTime.toDate(), 
-                        duration: newTimeEntry.duration 
-                    }]
-                } : t
-            )
-        );
     }).catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: taskDoc.path,
@@ -308,7 +289,7 @@ export function Dashboard({ user }: DashboardProps) {
       <TimeLogDialog
         task={timeLogTask}
         isOpen={!!timeLogTask}
-        setIsOpen={(isOpen) => !isOpen && setTimeLogTask(null)}
+        setIsOpen={(isOpen) => !isOpen && setTimeLog-task(null)}
       />
 
       <style jsx global>{`
