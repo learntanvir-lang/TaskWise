@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Briefcase,
   Calendar as CalendarIcon,
@@ -39,7 +39,7 @@ type TaskItemProps = {
   onEdit: (task: Task) => void;
   isTimerActive: boolean;
   setActiveTimer: (id: string | null) => void;
-  updateTaskTime: (id: string, time: number) => void;
+  updateTaskTime: (id: string, time: number, startTime: Date) => void;
   isAnotherTimerActive: boolean;
   onTimeLogClick: (task: Task) => void;
 };
@@ -82,6 +82,7 @@ export function TaskItem({
 }: TaskItemProps) {
   const { toast } = useToast();
   const [elapsedTime, setElapsedTime] = useState(0);
+  const timerStartTimeRef = useRef<Date | null>(null);
   const isOverdue = !task.isCompleted && isPast(task.dueDate) && !isToday(task.dueDate);
 
   useEffect(() => {
@@ -99,11 +100,12 @@ export function TaskItem({
   const handleTimerToggle = useCallback(() => {
     if (isTimerActive) {
       // Stop timer
-      if (elapsedTime > 0) {
-        updateTaskTime(task.id, elapsedTime);
+      if (elapsedTime > 0 && timerStartTimeRef.current) {
+        updateTaskTime(task.id, elapsedTime, timerStartTimeRef.current);
       }
       setActiveTimer(null);
       setElapsedTime(0);
+      timerStartTimeRef.current = null;
       toast({ title: "Timer Stopped", description: `Time logged for "${task.title}".` });
     } else {
       // Start timer
@@ -111,6 +113,7 @@ export function TaskItem({
         toast({ title: "Another Timer Active", description: "Please stop the other timer before starting a new one.", variant: "destructive" });
         return;
       }
+      timerStartTimeRef.current = new Date();
       setActiveTimer(task.id);
       toast({ title: "Timer Started", description: `Timing task "${task.title}".` });
     }

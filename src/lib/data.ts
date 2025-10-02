@@ -40,7 +40,11 @@ export const initialTasks: Omit<Task, 'id' | 'userId'>[] = [
     category: "work",
     isCompleted: true,
     timeSpent: 3600, // 1 hour
-    timeEntries: [{ date: new Date(new Date().setDate(new Date().getDate() + 1)), duration: 3600 }],
+    timeEntries: [{ 
+        startTime: new Date(new Date(new Date().setDate(new Date().getDate() + 1)).setHours(10, 0, 0)), 
+        endTime: new Date(new Date(new Date().setDate(new Date().getDate() + 1)).setHours(11, 0, 0)), 
+        duration: 3600 
+    }],
   },
   {
     title: "Call Mom",
@@ -50,7 +54,11 @@ export const initialTasks: Omit<Task, 'id' | 'userId'>[] = [
     category: "personal",
     isCompleted: true,
     timeSpent: 900, // 15 minutes
-    timeEntries: [{ date: new Date(), duration: 900 }],
+    timeEntries: [{ 
+        startTime: new Date(new Date().setHours(18, 0, 0)), 
+        endTime: new Date(new Date().setHours(18, 15, 0)), 
+        duration: 900 
+    }],
   },
   {
     title: "Renew gym membership",

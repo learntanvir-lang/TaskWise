@@ -69,7 +69,7 @@ export function Dashboard({ user }: DashboardProps) {
               ...task,
               userId: user.uid,
               dueDate: Timestamp.fromDate(task.dueDate),
-              timeEntries: task.timeEntries?.map(entry => ({ ...entry, date: Timestamp.fromDate(entry.date) })) || []
+              timeEntries: task.timeEntries?.map(entry => ({ ...entry, startTime: Timestamp.fromDate(entry.startTime), endTime: Timestamp.fromDate(entry.endTime) })) || []
             });
           });
 
@@ -89,7 +89,11 @@ export function Dashboard({ user }: DashboardProps) {
           ...data,
           dueDate: (data.dueDate as Timestamp).toDate(),
           timeEntries: data.timeEntries?.map((entry: any) => (
-            entry && entry.date ? { ...entry, date: (entry.date as Timestamp).toDate() } : entry
+            entry && entry.startTime && entry.endTime ? { 
+                ...entry, 
+                startTime: (entry.startTime as Timestamp).toDate(),
+                endTime: (entry.endTime as Timestamp).toDate(),
+            } : entry
           )).filter(Boolean) || [],
         } as Task;
       });
@@ -180,13 +184,15 @@ export function Dashboard({ user }: DashboardProps) {
     setIsDialogOpen(true);
   }
 
-  const updateTaskTime = useCallback(async (taskId: string, duration: number) => {
+  const updateTaskTime = useCallback(async (taskId: string, duration: number, startTime: Date) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
-    const newTimeEntry: Omit<TimeEntry, 'date'> & { date: Timestamp } = {
-        date: Timestamp.now(),
-        duration: duration
+    const endTime = new Date();
+    const newTimeEntry = {
+        startTime: Timestamp.fromDate(startTime),
+        endTime: Timestamp.fromDate(endTime),
+        duration,
     };
 
     const newTotalTime = task.timeSpent + duration;
@@ -203,7 +209,11 @@ export function Dashboard({ user }: DashboardProps) {
                 t.id === taskId ? { 
                     ...t, 
                     timeSpent: newTotalTime,
-                    timeEntries: [...(t.timeEntries || []), { date: newTimeEntry.date.toDate(), duration: newTimeEntry.duration }]
+                    timeEntries: [...(t.timeEntries || []), { 
+                        startTime: newTimeEntry.startTime.toDate(), 
+                        endTime: newTimeEntry.endTime.toDate(), 
+                        duration: newTimeEntry.duration 
+                    }]
                 } : t
             )
         );

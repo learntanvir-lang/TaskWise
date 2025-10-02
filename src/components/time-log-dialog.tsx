@@ -16,7 +16,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import type { Task, TimeEntry } from "@/lib/types";
+import type { Task } from "@/lib/types";
 import { format } from "date-fns";
 
 type TimeLogDialogProps = {
@@ -42,7 +42,7 @@ const formatDuration = (totalSeconds: number) => {
 export function TimeLogDialog({ isOpen, setIsOpen, task }: TimeLogDialogProps) {
     if (!task) return null;
 
-    const sortedTimeEntries = [...(task.timeEntries || [])].sort((a,b) => b.date.getTime() - a.date.getTime());
+    const sortedTimeEntries = [...(task.timeEntries || [])].sort((a,b) => b.startTime.getTime() - a.startTime.getTime());
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -58,6 +58,7 @@ export function TimeLogDialog({ isOpen, setIsOpen, task }: TimeLogDialogProps) {
                 <TableHeader>
                     <TableRow>
                     <TableHead>Date</TableHead>
+                    <TableHead>Time</TableHead>
                     <TableHead className="text-right">Duration</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -65,13 +66,14 @@ export function TimeLogDialog({ isOpen, setIsOpen, task }: TimeLogDialogProps) {
                     {sortedTimeEntries.length > 0 ? (
                         sortedTimeEntries.map((entry, index) => (
                             <TableRow key={index}>
-                                <TableCell>{format(entry.date, "PPP p")}</TableCell>
+                                <TableCell>{format(entry.startTime, "PPP")}</TableCell>
+                                <TableCell>{`${format(entry.startTime, "p")} - ${format(entry.endTime, "p")}`}</TableCell>
                                 <TableCell className="text-right">{formatDuration(entry.duration)}</TableCell>
                             </TableRow>
                         ))
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={2} className="text-center text-muted-foreground">
+                            <TableCell colSpan={3} className="text-center text-muted-foreground">
                                 No time has been logged for this task yet.
                             </TableCell>
                         </TableRow>
