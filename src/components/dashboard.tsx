@@ -103,16 +103,15 @@ export function Dashboard({ user }: DashboardProps) {
 
   const handleAddTask = async (newTaskData: Omit<Task, 'id' | 'isCompleted' | 'timeSpent' | 'userId'>) => {
     try {
-      const docRef = await addDoc(tasksCollectionRef, {
+      await addDoc(tasksCollectionRef, {
         ...newTaskData,
         userId: user.uid,
         isCompleted: false,
         timeSpent: 0,
         dueDate: Timestamp.fromDate(newTaskData.dueDate),
       });
-      const newTask: Task = { ...newTaskData, id: docRef.id, isCompleted: false, timeSpent: 0, userId: user.uid };
-      setTasks(prev => [...prev, newTask]);
-      toast({ title: "Task Created", description: `"${newTask.title}" has been added.` });
+      await fetchTasks();
+      toast({ title: "Task Created", description: `"${newTaskData.title}" has been added.` });
     } catch (error) {
       console.error("Error adding task: ", error);
       toast({ title: "Error", description: "Failed to create task.", variant: "destructive" });
