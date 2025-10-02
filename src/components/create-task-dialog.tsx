@@ -109,8 +109,8 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
         customCategory: "",
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskToEdit, isOpen]);
+    setAiSuggestion(null);
+  }, [taskToEdit, isOpen, form]);
 
   const handleSuggestPriority = async () => {
     const { title, description, dueDate } = form.getValues();
@@ -127,8 +127,7 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
       });
 
       if (result.success && result.data) {
-        // @ts-ignore
-        form.setValue("priority", result.data.priority, { shouldValidate: true });
+        form.setValue("priority", result.data.priority as "low" | "medium" | "high", { shouldValidate: true });
         setAiSuggestion(result.data);
       } else {
         toast({
@@ -141,23 +140,21 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
   };
 
   function onSubmit(data: TaskFormValues) {
-    const finalCategory = data.category === 'other' ? data.customCategory! : data.category;
-    const taskData = { ...data, category: finalCategory };
+    const { customCategory, ...taskData } = data;
+    const finalCategory = data.category === 'other' ? customCategory! : data.category;
     
+    const finalTaskData = { ...taskData, category: finalCategory };
+
     if (taskToEdit) {
-        onTaskUpdate({ ...taskToEdit, ...taskData });
+      onTaskUpdate({ ...taskToEdit, ...finalTaskData });
     } else {
-        onTaskCreate(taskData);
+      onTaskCreate(finalTaskData);
     }
     setIsOpen(false);
   }
   
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-    if (!open) {
-        form.reset();
-        setAiSuggestion(null);
-    }
   }
 
   return (

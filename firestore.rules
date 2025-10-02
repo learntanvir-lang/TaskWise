@@ -1,13 +1,30 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /tasks/{taskId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-    }
-    match /userFlags/{docId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Users can only read their own tasks.
+      allow read: if request.auth.uid == resource.data.userId;
+
+      // Users can create a task if they are logged in and the new task's userId matches their own.
+      // We also validate the shape of the data being written.
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId
+        && request.resource.data.title is string
+        && request.resource.data.description is string
+        && request.resource.data.dueDate is timestamp
+        && request.resource.data.priority is string
+        && request.resource.data.category is string
+        && request.resource.data.isCompleted is bool
+        && request.resource.data.timeSpent is number
+        && request.resource.data.timeEntries is list
+        && request.resource.data.keys().hasAll(['title', 'description', 'dueDate', 'priority', 'category', 'userId', 'isCompleted', 'timeSpent', 'timeEntries']);
+        
+      // Users can update their own tasks.
+      // They can only change certain fields.
+      allow update: if request.auth.uid == resource.data.userId
+        && request.resource.data.userId == resource.data.userId;
+
+      // Users can delete their own tasks.
+      allow delete: if request.auth.uid == resource.data.userId;
     }
   }
 }
