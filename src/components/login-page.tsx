@@ -54,11 +54,19 @@ export function LoginPage() {
         description: "Welcome! You can now log in.",
       });
     } catch (error: any) {
-      toast({
-        title: "Sign Up Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error.code === 'auth/email-already-in-use') {
+        toast({
+          title: "Sign Up Failed",
+          description: "An account with this email already exists. Please log in.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Sign Up Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     }
     setLoading(false);
   };
