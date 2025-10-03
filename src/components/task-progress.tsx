@@ -33,11 +33,11 @@ export function TaskProgress({ title = "Progress", totalTasks, completedTasks, t
         <CardTitle className="text-base font-medium">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">
             {completedTasks} / {totalTasks} completed
           </span>
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 font-semibold text-base text-primary">
              <Clock className="h-4 w-4" />
              {formatTime(totalTimeSpent)}
           </span>
