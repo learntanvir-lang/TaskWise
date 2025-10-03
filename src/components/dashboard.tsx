@@ -229,16 +229,15 @@ export function Dashboard({ user }: DashboardProps) {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
   
-    const isNewEntry = !updatedEntry.id;
-    const finalEntry = isNewEntry ? { ...updatedEntry, id: nanoid() } : updatedEntry;
+    const isNewEntry = !(task.timeEntries || []).some(entry => entry.id === updatedEntry.id);
   
     let updatedEntries: TimeEntry[];
   
     if (isNewEntry) {
-      updatedEntries = [...(task.timeEntries || []), finalEntry];
+      updatedEntries = [...(task.timeEntries || []), updatedEntry];
     } else {
       updatedEntries = (task.timeEntries || []).map(entry =>
-        entry.id === finalEntry.id ? finalEntry : entry
+        entry.id === updatedEntry.id ? updatedEntry : entry
       );
     }
     
