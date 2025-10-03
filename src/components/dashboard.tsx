@@ -42,6 +42,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Logo } from "./icons";
 
 type DashboardProps = {
   user: User;
@@ -316,12 +317,14 @@ export function Dashboard({ user }: DashboardProps) {
     <div className="flex flex-col h-screen bg-gray-50/50 dark:bg-gray-950/50">
       <header className="flex items-center justify-between p-4 border-b shrink-0 bg-white dark:bg-gray-900">
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-bold tracking-tight text-primary flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-yellow-400" />
-            Hello, {user?.displayName || "User"}
-          </h1>
+            <Logo className="h-8 w-8 text-primary" />
+            <h1 className="text-xl font-bold tracking-tight">TaskWise</h1>
         </div>
         <div className="flex items-center gap-4">
+           <span className="flex items-center gap-2 text-base font-bold text-primary">
+            <Sparkles className="h-5 w-5 text-yellow-400" />
+            Hello, {user?.displayName || "User"}!
+          </span>
           <Button onClick={handleAddNewTaskClick}>
             <Plus className="-ml-1 mr-2 h-4 w-4" />
             Add Task
