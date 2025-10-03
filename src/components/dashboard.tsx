@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { format, isSameDay } from "date-fns";
-import { LogOut, Plus, Sparkles } from "lucide-react";
+import { LogOut, Plus, Sparkles, KeyRound } from "lucide-react";
 import {
   collection,
   addDoc,
@@ -33,6 +33,7 @@ import { useAuth, type User } from "@/hooks/use-auth";
 import { TimeLogDialog } from "./time-log-dialog";
 import { errorEmitter } from "@/lib/error-emitter";
 import { FirestorePermissionError } from "@/lib/errors";
+import { ChangePasswordDialog } from "./change-password-dialog";
 
 type DashboardProps = {
   user: User;
@@ -41,7 +42,8 @@ type DashboardProps = {
 export function Dashboard({ user }: DashboardProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreateTaskDialogOpen, setCreateTaskDialogOpen] = useState(false);
+  const [isChangePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [activeTimer, setActiveTimer] = useState<string | null>(null);
   const { toast } = useToast();
@@ -180,12 +182,12 @@ export function Dashboard({ user }: DashboardProps) {
 
   const handleEditTask = (task: Task) => {
     setTaskToEdit(task);
-    setIsDialogOpen(true);
+    setCreateTaskDialogOpen(true);
   }
 
   const handleAddNewTaskClick = () => {
     setTaskToEdit(null);
-    setIsDialogOpen(true);
+    setCreateTaskDialogOpen(true);
   }
 
   const updateTaskTime = useCallback(async (taskId: string, startTime: Date) => {
@@ -325,6 +327,10 @@ export function Dashboard({ user }: DashboardProps) {
             <Plus className="-ml-1 mr-2 h-4 w-4" />
             Add Task
           </Button>
+          <Button variant="outline" onClick={() => setChangePasswordDialogOpen(true)}>
+            <KeyRound className="mr-2 h-4 w-4" />
+            Change Password
+          </Button>
           <Button variant="outline" onClick={signOut}>
             <LogOut className="mr-2 h-4 w-4" />
             Logout
@@ -375,11 +381,16 @@ export function Dashboard({ user }: DashboardProps) {
       </main>
 
       <CreateTaskDialog
-        isOpen={isDialogOpen}
-        setIsOpen={setIsDialogOpen}
+        isOpen={isCreateTaskDialogOpen}
+        setIsOpen={setCreateTaskDialogOpen}
         onTaskCreate={handleAddTask}
         onTaskUpdate={handleUpdateTask}
         taskToEdit={taskToEdit}
+      />
+      
+      <ChangePasswordDialog 
+        isOpen={isChangePasswordDialogOpen}
+        setIsOpen={setChangePasswordDialogOpen}
       />
 
       <TimeLogDialog
