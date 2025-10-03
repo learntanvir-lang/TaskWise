@@ -322,7 +322,7 @@ export function Dashboard({ user }: DashboardProps) {
         </div>
         <div className="flex items-center gap-4">
            <span className="flex items-center gap-2 text-base font-bold text-primary">
-            <Sparkles className="h-5 w-5 text-yellow-400" />
+            <Sparkles className="h-5 w-5 text-accent" />
             Hello, {user?.displayName || "User"}!
           </span>
           <Button onClick={handleAddNewTaskClick}>
