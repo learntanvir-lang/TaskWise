@@ -1,3 +1,4 @@
+
 // src/components/login-page.tsx
 "use client";
 
@@ -22,13 +23,16 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "./icons";
+import { Eye, EyeOff } from "lucide-react";
 
 export function LoginPage() {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [signUpName, setSignUpName] = useState("");
   const [signUpEmail, setSignUpEmail] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
+  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -117,15 +121,27 @@ export function LoginPage() {
                     disabled={loading}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 relative">
                   <Label htmlFor="login-password">Password</Label>
                   <Input
                     id="login-password"
-                    type="password"
+                    type={showLoginPassword ? "text" : "password"}
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     disabled={loading}
+                    className="pr-10"
                   />
+                   <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-6 h-7 px-3"
+                    onClick={() => setShowLoginPassword((prev) => !prev)}
+                    disabled={loading}
+                    aria-label={showLoginPassword ? "Hide password" : "Show password"}
+                  >
+                    {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
                 </div>
               </CardContent>
               <CardFooter>
@@ -166,15 +182,27 @@ export function LoginPage() {
                     disabled={loading}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 relative">
                   <Label htmlFor="signup-password">Password</Label>
                   <Input
                     id="signup-password"
-                    type="password"
+                    type={showSignUpPassword ? "text" : "password"}
                     value={signUpPassword}
                     onChange={(e) => setSignUpPassword(e.target.value)}
                     disabled={loading}
+                    className="pr-10"
                   />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-6 h-7 px-3"
+                    onClick={() => setShowSignUpPassword((prev) => !prev)}
+                    disabled={loading}
+                    aria-label={showSignUpPassword ? "Hide password" : "Show password"}
+                  >
+                    {showSignUpPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
                 </div>
               </CardContent>
               <CardFooter>
