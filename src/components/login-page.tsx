@@ -121,27 +121,29 @@ export function LoginPage() {
                     disabled={loading}
                   />
                 </div>
-                <div className="space-y-2 relative">
+                <div className="space-y-2">
                   <Label htmlFor="login-password">Password</Label>
-                  <Input
-                    id="login-password"
-                    type={showLoginPassword ? "text" : "password"}
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    disabled={loading}
-                    className="pr-10"
-                  />
-                   <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-6 h-7 px-3"
-                    onClick={() => setShowLoginPassword((prev) => !prev)}
-                    disabled={loading}
-                    aria-label={showLoginPassword ? "Hide password" : "Show password"}
-                  >
-                    {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
+                   <div className="relative flex items-center">
+                    <Input
+                      id="login-password"
+                      type={showLoginPassword ? "text" : "password"}
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      disabled={loading}
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 h-auto px-3 py-2"
+                      onClick={() => setShowLoginPassword((prev) => !prev)}
+                      disabled={loading}
+                      aria-label={showLoginPassword ? "Hide password" : "Show password"}
+                    >
+                      {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
               <CardFooter>
@@ -182,27 +184,29 @@ export function LoginPage() {
                     disabled={loading}
                   />
                 </div>
-                <div className="space-y-2 relative">
+                <div className="space-y-2">
                   <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type={showSignUpPassword ? "text" : "password"}
-                    value={signUpPassword}
-                    onChange={(e) => setSignUpPassword(e.target.value)}
-                    disabled={loading}
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-6 h-7 px-3"
-                    onClick={() => setShowSignUpPassword((prev) => !prev)}
-                    disabled={loading}
-                    aria-label={showSignUpPassword ? "Hide password" : "Show password"}
-                  >
-                    {showSignUpPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
+                   <div className="relative flex items-center">
+                    <Input
+                      id="signup-password"
+                      type={showSignUpPassword ? "text" : "password"}
+                      value={signUpPassword}
+                      onChange={(e) => setSignUpPassword(e.target.value)}
+                      disabled={loading}
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 h-auto px-3 py-2"
+                      onClick={() => setShowSignUpPassword((prev) => !prev)}
+                      disabled={loading}
+                      aria-label={showSignUpPassword ? "Hide password" : "Show password"}
+                    >
+                      {showSignUpPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
               <CardFooter>
