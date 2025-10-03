@@ -1,4 +1,5 @@
 import type { Task, TimeEntry } from "./types";
+import { nanoid } from "nanoid";
 
 // Note: id and userId will be replaced by Firestore
 export const initialTasks: Omit<Task, 'id' | 'userId'>[] = [
@@ -40,7 +41,8 @@ export const initialTasks: Omit<Task, 'id' | 'userId'>[] = [
     category: "work",
     isCompleted: true,
     timeSpent: 3600, // 1 hour
-    timeEntries: [{ 
+    timeEntries: [{
+        id: nanoid(),
         startTime: new Date(new Date(new Date().setDate(new Date().getDate() + 1)).setHours(10, 0, 0)), 
         endTime: new Date(new Date(new Date().setDate(new Date().getDate() + 1)).setHours(11, 0, 0)), 
         duration: 3600 
@@ -55,6 +57,7 @@ export const initialTasks: Omit<Task, 'id' | 'userId'>[] = [
     isCompleted: true,
     timeSpent: 900, // 15 minutes
     timeEntries: [{ 
+        id: nanoid(),
         startTime: new Date(new Date().setHours(18, 0, 0)), 
         endTime: new Date(new Date().setHours(18, 15, 0)), 
         duration: 900 
