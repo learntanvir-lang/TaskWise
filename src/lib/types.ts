@@ -2,6 +2,7 @@ export type TaskPriority = "low" | "medium" | "high";
 export type TaskCategory = string;
 
 export type TimeEntry = {
+  id: string;
   startTime: Date;
   endTime: Date;
   duration: number; // in seconds

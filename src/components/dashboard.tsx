@@ -14,9 +14,10 @@ import {
   query,
   where,
   arrayUnion,
+  arrayRemove,
   onSnapshot,
-  Unsubscribe,
 } from "firebase/firestore";
+import { nanoid } from "nanoid";
 
 import { db } from "@/lib/firebase";
 import type { Task, TimeEntry } from "@/lib/types";
@@ -70,6 +71,15 @@ export function Dashboard({ user }: DashboardProps) {
         } as Task;
       });
       setTasks(tasksData);
+
+      // If the time log dialog is open, update its task data
+      if (timeLogTask) {
+        const updatedTask = tasksData.find(t => t.id === timeLogTask.id);
+        if (updatedTask) {
+          setTimeLogTask(updatedTask);
+        }
+      }
+
     }, (error) => {
       console.error("Error fetching tasks with snapshot: ", error);
       const permissionError = new FirestorePermissionError({
@@ -79,9 +89,8 @@ export function Dashboard({ user }: DashboardProps) {
       errorEmitter.emit('permission-error', permissionError);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [user]);
+  }, [user, timeLogTask?.id]);
 
 
   const handleAddTask = async (newTaskData: Omit<Task, 'id' | 'isCompleted' | 'timeSpent' | 'userId'>) => {
@@ -111,10 +120,18 @@ export function Dashboard({ user }: DashboardProps) {
   const handleUpdateTask = async (updatedTask: Task) => {
     const taskDoc = doc(db, "tasks", updatedTask.id);
     const { id, ...taskData } = updatedTask;
+
+    // Convert Date objects back to Timestamps for Firestore
     const dataToSave = {
-        ...taskData,
-        dueDate: Timestamp.fromDate(taskData.dueDate)
+      ...taskData,
+      dueDate: Timestamp.fromDate(taskData.dueDate),
+      timeEntries: (taskData.timeEntries || []).map(entry => ({
+        ...entry,
+        startTime: Timestamp.fromDate(entry.startTime),
+        endTime: Timestamp.fromDate(entry.endTime),
+      }))
     };
+
     updateDoc(taskDoc, dataToSave)
     .then(() => {
         toast({ title: "Task Updated", description: `"${updatedTask.title}" has been updated.` });
@@ -177,6 +194,7 @@ export function Dashboard({ user }: DashboardProps) {
     const duration = Math.round((endTime.getTime() - startTime.getTime()) / 1000); // duration in seconds
     
     const newTimeEntry = {
+        id: nanoid(),
         startTime: Timestamp.fromDate(startTime),
         endTime: Timestamp.fromDate(endTime),
         duration,
@@ -197,6 +215,88 @@ export function Dashboard({ user }: DashboardProps) {
         errorEmitter.emit('permission-error', permissionError);
     });
   }, [tasks, toast]);
+
+  const handleTimeEntryUpdate = async (taskId: string, updatedEntry: TimeEntry) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || !task.timeEntries) return;
+
+    const entryIndex = task.timeEntries.findIndex(e => e.id === updatedEntry.id);
+    if (entryIndex === -1) {
+      // This is a new entry
+      const entryWithTimestamp = {
+        ...updatedEntry,
+        startTime: Timestamp.fromDate(updatedEntry.startTime),
+        endTime: Timestamp.fromDate(updatedEntry.endTime),
+      };
+
+      const taskDoc = doc(db, "tasks", taskId);
+      await updateDoc(taskDoc, {
+        timeEntries: arrayUnion(entryWithTimestamp)
+      });
+      // Recalculate total time
+      await recalculateTotalTime(taskId);
+
+    } else {
+      // This is an existing entry
+      const updatedEntries = [...task.timeEntries];
+      updatedEntries[entryIndex] = updatedEntry;
+      
+      const taskDoc = doc(db, "tasks", taskId);
+
+      // We must convert dates back to timestamps before sending to Firestore
+      const entriesForFirestore = updatedEntries.map(e => ({
+        ...e,
+        startTime: Timestamp.fromDate(e.startTime),
+        endTime: Timestamp.fromDate(e.endTime),
+      }));
+
+      await updateDoc(taskDoc, {
+        timeEntries: entriesForFirestore,
+      });
+
+      // Recalculate total time
+      await recalculateTotalTime(taskId);
+    }
+  };
+  
+  const handleTimeEntryDelete = async (taskId: string, entryId: string) => {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task || !task.timeEntries) return;
+  
+      const entryToDelete = task.timeEntries.find(e => e.id === entryId);
+      if (!entryToDelete) return;
+
+      // Convert the entry to have Timestamps before using arrayRemove
+      const entryToRemoveForFirestore = {
+        ...entryToDelete,
+        startTime: Timestamp.fromDate(entryToDelete.startTime),
+        endTime: Timestamp.fromDate(entryToDelete.endTime),
+      }
+  
+      const taskDoc = doc(db, "tasks", taskId);
+      await updateDoc(taskDoc, {
+          timeEntries: arrayRemove(entryToRemoveForFirestore)
+      });
+      
+      // Recalculate total time
+      await recalculateTotalTime(taskId);
+  };
+  
+  const recalculateTotalTime = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return; // Task might not be in local state yet
+    const taskRef = doc(db, "tasks", taskId);
+  
+    // It's safer to get the latest version of the task from local state
+    // which is updated by the onSnapshot listener.
+    const currentTask = tasks.find(t => t.id === taskId);
+    const totalTime = (currentTask?.timeEntries || []).reduce((acc, entry) => acc + entry.duration, 0);
+
+    await updateDoc(taskRef, {
+        timeSpent: totalTime
+    });
+  };
+
 
   const tasksForSelectedDay = useMemo(() => {
     if (!selectedDate) return [];
@@ -225,6 +325,7 @@ export function Dashboard({ user }: DashboardProps) {
           <h1 className="text-xl font-bold tracking-tight">TaskWise</h1>
         </div>
         <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">Hello, {user?.displayName || user?.email}</span>
           <Button onClick={handleAddNewTaskClick}>
             <Plus className="-ml-1 mr-2 h-4 w-4" />
             Add Task
@@ -287,9 +388,12 @@ export function Dashboard({ user }: DashboardProps) {
       />
 
       <TimeLogDialog
+        key={timeLogTask?.id} // Add key to force re-mount when task changes
         task={timeLogTask}
         isOpen={!!timeLogTask}
         setIsOpen={(isOpen) => !isOpen && setTimeLogTask(null)}
+        onTimeEntryUpdate={handleTimeEntryUpdate}
+        onTimeEntryDelete={handleTimeEntryDelete}
       />
 
       <style jsx global>{`
