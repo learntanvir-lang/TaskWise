@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { format, isSameDay } from "date-fns";
-import { LogOut, Plus } from "lucide-react";
+import { LogOut, Plus, Sparkles } from "lucide-react";
 import {
   collection,
   addDoc,
@@ -312,8 +312,15 @@ export function Dashboard({ user }: DashboardProps) {
           <Logo className="h-8 w-8 text-primary" />
           <h1 className="text-xl font-bold tracking-tight">TaskWise</h1>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Hello, {user?.displayName || user?.email}</span>
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium flex items-center gap-2">
+            Hello,
+            <span className="font-bold text-accent flex items-center gap-1">
+              <Sparkles className="h-4 w-4 text-yellow-400" />
+              {user?.displayName || user?.email}
+              <Sparkles className="h-4 w-4 text-yellow-400" />
+            </span>
+          </span>
           <Button onClick={handleAddNewTaskClick}>
             <Plus className="-ml-1 mr-2 h-4 w-4" />
             Add Task
