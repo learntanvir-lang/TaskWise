@@ -327,6 +327,7 @@ export function Dashboard({ user }: DashboardProps) {
            <span className="hidden md:flex items-center gap-2 text-lg font-bold text-primary">
             <Sparkles className="h-5 w-5" />
             Hello, {user?.displayName || "User"}!
+            <Sparkles className="h-5 w-5" />
           </span>
            <Button onClick={handleAddNewTaskClick} size="sm" className="md:w-auto">
             <Plus className="-ml-1 md:mr-2 h-4 w-4" />
