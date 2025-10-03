@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format, set, getHours, getMinutes } from "date-fns";
 import { MoreHorizontal, Pencil, Plus, Trash2, CalendarIcon } from "lucide-react";
+import { nanoid } from "nanoid";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -190,7 +191,7 @@ function LogForm({
                                     </Select>
                                 )}
                            />
-                           <Controller>
+                           <Controller
                                 control={form.control}
                                 name="endTime"
                                 render={() => (
@@ -201,7 +202,7 @@ function LogForm({
                                         </SelectContent>
                                     </Select>
                                 )}
-                           </Controller>
+                           />
                         </div>
                          <FormMessage>{form.formState.errors.endTime?.message}</FormMessage>
                     </FormItem>
@@ -241,7 +242,7 @@ export function TimeLogDialog({ isOpen, setIsOpen, task, onTimeEntryUpdate, onTi
         }
 
         const newEntry: TimeEntry = {
-            id: editingEntryId || "", // ID is generated in dashboard component if it's new
+            id: editingEntryId || nanoid(),
             startTime,
             endTime,
             duration,
