@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { format, isSameDay } from "date-fns";
-import { LogOut, Plus, Sparkles, KeyRound } from "lucide-react";
+import { Plus, Sparkles, User as UserIcon, KeyRound, LogOut } from "lucide-react";
 import {
   collection,
   addDoc,
@@ -26,7 +26,6 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { CreateTaskDialog } from "./create-task-dialog";
-import { Logo } from "./icons";
 import { TaskList } from "./task-list";
 import { TaskProgress } from "./task-progress";
 import { useAuth, type User } from "@/hooks/use-auth";
@@ -34,6 +33,15 @@ import { TimeLogDialog } from "./time-log-dialog";
 import { errorEmitter } from "@/lib/error-emitter";
 import { FirestorePermissionError } from "@/lib/errors";
 import { ChangePasswordDialog } from "./change-password-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type DashboardProps = {
   user: User;
@@ -66,7 +74,7 @@ export function Dashboard({ user }: DashboardProps) {
           timeEntries: (data.timeEntries || []).map((entry: any) => (
             entry && entry.startTime && entry.endTime ? { 
                 ...entry,
-                id: entry.id || nanoid(), // Assign an ID if it's missing
+                id: entry.id || nanoid(),
                 startTime: (entry.startTime as Timestamp).toDate(),
                 endTime: (entry.endTime as Timestamp).toDate(),
             } : null
@@ -75,7 +83,6 @@ export function Dashboard({ user }: DashboardProps) {
       });
       setTasks(tasksData);
 
-      // If the time log dialog is open, update its task data
       if (timeLogTask) {
         const updatedTask = tasksData.find(t => t.id === timeLogTask.id);
         if (updatedTask) {
@@ -124,7 +131,6 @@ export function Dashboard({ user }: DashboardProps) {
     const taskDoc = doc(db, "tasks", updatedTask.id);
     const { id, ...taskData } = updatedTask;
 
-    // Convert Date objects back to Timestamps for Firestore
     const dataToSave = {
       ...taskData,
       dueDate: Timestamp.fromDate(taskData.dueDate),
@@ -204,7 +210,6 @@ export function Dashboard({ user }: DashboardProps) {
         duration,
     };
     
-    // Convert to Timestamps for Firestore
     const entryForFirestore = {
         ...newTimeEntry,
         startTime: Timestamp.fromDate(newTimeEntry.startTime),
@@ -311,30 +316,45 @@ export function Dashboard({ user }: DashboardProps) {
     <div className="flex flex-col h-screen bg-gray-50/50 dark:bg-gray-950/50">
       <header className="flex items-center justify-between p-4 border-b shrink-0 bg-white dark:bg-gray-900">
         <div className="flex items-center gap-2">
-          <Logo className="h-8 w-8 text-primary" />
-          <h1 className="text-xl font-bold tracking-tight">TaskWise</h1>
+          <h1 className="text-xl font-bold tracking-tight text-primary flex items-center gap-2">
+            <Sparkles className="h-6 w-6 text-yellow-400" />
+            Hello, {user?.displayName || "User"}
+          </h1>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-base font-medium flex items-center gap-2">
-            Hello,
-            <span className="font-bold text-accent flex items-center gap-1">
-              <Sparkles className="h-4 w-4 text-yellow-400" />
-              {user?.displayName || user?.email}
-              <Sparkles className="h-4 w-4 text-yellow-400" />
-            </span>
-          </span>
           <Button onClick={handleAddNewTaskClick}>
             <Plus className="-ml-1 mr-2 h-4 w-4" />
             Add Task
           </Button>
-          <Button variant="outline" onClick={() => setChangePasswordDialogOpen(true)}>
-            <KeyRound className="mr-2 h-4 w-4" />
-            Change Password
-          </Button>
-          <Button variant="outline" onClick={signOut}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Avatar>
+                  <AvatarImage src={user.photoURL ?? ''} />
+                  <AvatarFallback>
+                    <UserIcon className="h-5 w-5" />
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{user.displayName}</p>
+                  <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => setChangePasswordDialogOpen(true)}>
+                <KeyRound className="mr-2 h-4 w-4" />
+                <span>Change Password</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={signOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Logout</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
