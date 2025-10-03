@@ -302,6 +302,9 @@ export function Dashboard({ user }: DashboardProps) {
   }, [tasks, selectedDate]);
 
   const completedTasksForSelectedDay = useMemo(() => tasksForSelectedDay.filter(t => t.isCompleted).length, [tasksForSelectedDay]);
+  const totalTimeForSelectedDay = useMemo(() => {
+    return tasksForSelectedDay.reduce((acc, task) => acc + (task.timeSpent || 0), 0);
+  }, [tasksForSelectedDay]);
 
   const taskDateModifiers = {
     taskDays: tasks.filter(t => !t.isCompleted).map(t => t.dueDate),
@@ -322,7 +325,7 @@ export function Dashboard({ user }: DashboardProps) {
         </div>
         <div className="flex items-center gap-2 md:gap-4">
            <span className="hidden md:flex items-center gap-2 text-lg font-bold text-primary">
-            <Sparkles className="h-5 w-5" />
+            <Sparkles className="h-5 w-5 text-accent" />
             Hello, {user?.displayName || "User"}!
           </span>
            <Button onClick={handleAddNewTaskClick} size="sm" className="md:w-auto">
@@ -368,6 +371,7 @@ export function Dashboard({ user }: DashboardProps) {
               title="Today's Progress"
               totalTasks={tasksForSelectedDay.length}
               completedTasks={completedTasksForSelectedDay}
+              totalTimeSpent={totalTimeForSelectedDay}
             />
             <Card>
               <CardContent className="p-1">
