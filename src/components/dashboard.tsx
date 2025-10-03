@@ -193,11 +193,18 @@ export function Dashboard({ user }: DashboardProps) {
     const endTime = new Date();
     const duration = Math.round((endTime.getTime() - startTime.getTime()) / 1000); // duration in seconds
     
-    const newTimeEntry = {
+    const newTimeEntry: TimeEntry = {
         id: nanoid(),
-        startTime: Timestamp.fromDate(startTime),
-        endTime: Timestamp.fromDate(endTime),
+        startTime: startTime,
+        endTime: endTime,
         duration,
+    };
+    
+    // Convert to Timestamps for Firestore
+    const entryForFirestore = {
+        ...newTimeEntry,
+        startTime: Timestamp.fromDate(newTimeEntry.startTime),
+        endTime: Timestamp.fromDate(newTimeEntry.endTime),
     };
 
     const newTotalTime = (task.timeSpent || 0) + duration;
@@ -205,7 +212,7 @@ export function Dashboard({ user }: DashboardProps) {
     const taskDoc = doc(db, "tasks", taskId);
     updateDoc(taskDoc, {
         timeSpent: newTotalTime,
-        timeEntries: arrayUnion(newTimeEntry)
+        timeEntries: arrayUnion(entryForFirestore)
     }).catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: taskDoc.path,
@@ -215,83 +222,65 @@ export function Dashboard({ user }: DashboardProps) {
         errorEmitter.emit('permission-error', permissionError);
     });
   }, [tasks, toast]);
-
+  
   const handleTimeEntryUpdate = async (taskId: string, updatedEntry: TimeEntry) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+  
+    const isNewEntry = !updatedEntry.id;
+    const finalEntry = isNewEntry ? { ...updatedEntry, id: nanoid() } : updatedEntry;
+  
+    let updatedEntries: TimeEntry[];
+  
+    if (isNewEntry) {
+      updatedEntries = [...(task.timeEntries || []), finalEntry];
+    } else {
+      updatedEntries = (task.timeEntries || []).map(entry =>
+        entry.id === finalEntry.id ? finalEntry : entry
+      );
+    }
+    
+    // We must convert dates back to timestamps before sending to Firestore
+    const entriesForFirestore = updatedEntries.map(e => ({
+      ...e,
+      startTime: Timestamp.fromDate(e.startTime),
+      endTime: Timestamp.fromDate(e.endTime),
+    }));
+  
+    const taskDoc = doc(db, "tasks", taskId);
+    await updateDoc(taskDoc, {
+      timeEntries: entriesForFirestore,
+    });
+  
+    // Recalculate total time
+    await recalculateTotalTime(taskId, updatedEntries);
+  };
+
+  const handleTimeEntryDelete = async (taskId: string, entryId: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task || !task.timeEntries) return;
 
-    const entryIndex = task.timeEntries.findIndex(e => e.id === updatedEntry.id);
-    if (entryIndex === -1) {
-      // This is a new entry
-      const entryWithTimestamp = {
-        ...updatedEntry,
-        startTime: Timestamp.fromDate(updatedEntry.startTime),
-        endTime: Timestamp.fromDate(updatedEntry.endTime),
-      };
+    const updatedEntries = task.timeEntries.filter(e => e.id !== entryId);
 
-      const taskDoc = doc(db, "tasks", taskId);
-      await updateDoc(taskDoc, {
-        timeEntries: arrayUnion(entryWithTimestamp)
-      });
-      // Recalculate total time
-      await recalculateTotalTime(taskId);
-
-    } else {
-      // This is an existing entry
-      const updatedEntries = [...task.timeEntries];
-      updatedEntries[entryIndex] = updatedEntry;
-      
-      const taskDoc = doc(db, "tasks", taskId);
-
-      // We must convert dates back to timestamps before sending to Firestore
-      const entriesForFirestore = updatedEntries.map(e => ({
+    // Convert dates back to timestamps for Firestore
+    const entriesForFirestore = updatedEntries.map(e => ({
         ...e,
         startTime: Timestamp.fromDate(e.startTime),
         endTime: Timestamp.fromDate(e.endTime),
-      }));
+    }));
 
-      await updateDoc(taskDoc, {
-        timeEntries: entriesForFirestore,
-      });
-
-      // Recalculate total time
-      await recalculateTotalTime(taskId);
-    }
+    const taskDoc = doc(db, "tasks", taskId);
+    await updateDoc(taskDoc, {
+        timeEntries: entriesForFirestore
+    });
+    
+    // Recalculate total time
+    await recalculateTotalTime(taskId, updatedEntries);
   };
   
-  const handleTimeEntryDelete = async (taskId: string, entryId: string) => {
-      const task = tasks.find(t => t.id === taskId);
-      if (!task || !task.timeEntries) return;
-  
-      const entryToDelete = task.timeEntries.find(e => e.id === entryId);
-      if (!entryToDelete) return;
-
-      // Convert the entry to have Timestamps before using arrayRemove
-      const entryToRemoveForFirestore = {
-        ...entryToDelete,
-        startTime: Timestamp.fromDate(entryToDelete.startTime),
-        endTime: Timestamp.fromDate(entryToDelete.endTime),
-      }
-  
-      const taskDoc = doc(db, "tasks", taskId);
-      await updateDoc(taskDoc, {
-          timeEntries: arrayRemove(entryToRemoveForFirestore)
-      });
-      
-      // Recalculate total time
-      await recalculateTotalTime(taskId);
-  };
-  
-  const recalculateTotalTime = async (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return; // Task might not be in local state yet
+  const recalculateTotalTime = async (taskId: string, currentEntries: TimeEntry[]) => {
+    const totalTime = currentEntries.reduce((acc, entry) => acc + entry.duration, 0);
     const taskRef = doc(db, "tasks", taskId);
-  
-    // It's safer to get the latest version of the task from local state
-    // which is updated by the onSnapshot listener.
-    const currentTask = tasks.find(t => t.id === taskId);
-    const totalTime = (currentTask?.timeEntries || []).reduce((acc, entry) => acc + entry.duration, 0);
-
     await updateDoc(taskRef, {
         timeSpent: totalTime
     });

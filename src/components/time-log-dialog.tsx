@@ -6,7 +6,6 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format, set, getHours, getMinutes } from "date-fns";
-import { nanoid } from "nanoid";
 import { MoreHorizontal, Pencil, Plus, Trash2, CalendarIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -242,7 +241,7 @@ export function TimeLogDialog({ isOpen, setIsOpen, task, onTimeEntryUpdate, onTi
         }
 
         const newEntry: TimeEntry = {
-            id: editingEntryId || nanoid(),
+            id: editingEntryId || "", // ID is generated in dashboard component if it's new
             startTime,
             endTime,
             duration,
