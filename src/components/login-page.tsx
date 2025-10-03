@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  updateProfile,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import { Logo } from "./icons";
 export function LoginPage() {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [signUpName, setSignUpName] = useState("");
   const [signUpEmail, setSignUpEmail] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -46,9 +48,20 @@ export function LoginPage() {
   };
 
   const handleSignUp = async () => {
+    if (!signUpName) {
+      toast({
+        title: "Sign Up Failed",
+        description: "Please enter your name.",
+        variant: "destructive",
+      });
+      return;
+    }
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, signUpEmail, signUpPassword);
+      const userCredential = await createUserWithEmailAndPassword(auth, signUpEmail, signUpPassword);
+      await updateProfile(userCredential.user, {
+        displayName: signUpName,
+      });
       toast({
         title: "Sign Up Successful",
         description: "Welcome! You can now log in.",
@@ -131,6 +144,17 @@ export function LoginPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-name">Name</Label>
+                  <Input
+                    id="signup-name"
+                    type="text"
+                    placeholder="John Doe"
+                    value={signUpName}
+                    onChange={(e) => setSignUpName(e.target.value)}
+                    disabled={loading}
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
                   <Input
