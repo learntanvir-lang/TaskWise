@@ -313,7 +313,7 @@ export function Dashboard({ user }: DashboardProps) {
           <h1 className="text-xl font-bold tracking-tight">TaskWise</h1>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-sm font-medium flex items-center gap-2">
+          <span className="text-base font-medium flex items-center gap-2">
             Hello,
             <span className="font-bold text-accent flex items-center gap-1">
               <Sparkles className="h-4 w-4 text-yellow-400" />
