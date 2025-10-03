@@ -321,7 +321,7 @@ export function Dashboard({ user }: DashboardProps) {
             <h1 className="text-xl font-bold tracking-tight">TaskWise</h1>
         </div>
         <div className="flex items-center gap-4">
-           <span className="flex items-center gap-2 text-base font-bold text-primary">
+           <span className="flex items-center gap-2 text-lg font-bold text-primary">
             <Sparkles className="h-5 w-5 text-accent" />
             Hello, {user?.displayName || "User"}!
           </span>
