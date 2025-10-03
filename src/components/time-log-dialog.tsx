@@ -145,7 +145,7 @@ function LogForm({
                         </FormItem>
                     )}
                 />
-                 <div className="grid grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormItem>
                         <FormLabel>Start Time</FormLabel>
                         <div className="flex gap-2">
@@ -298,16 +298,16 @@ export function TimeLogDialog({ isOpen, setIsOpen, task, onTimeEntryUpdate, onTi
                     <TableHead>Date</TableHead>
                     <TableHead>Time</TableHead>
                     <TableHead className="text-right">Duration</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="w-[80px] text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {sortedTimeEntries.length > 0 ? (
                         sortedTimeEntries.map((entry) => (
                             <TableRow key={entry.id}>
-                                <TableCell>{format(entry.startTime, "PPP")}</TableCell>
-                                <TableCell>{`${format(entry.startTime, "p")} - ${format(entry.endTime, "p")}`}</TableCell>
-                                <TableCell className="text-right">{formatDuration(entry.duration)}</TableCell>
+                                <TableCell className="text-xs sm:text-sm">{format(entry.startTime, "PPP")}</TableCell>
+                                <TableCell className="text-xs sm:text-sm">{`${format(entry.startTime, "p")} - ${format(entry.endTime, "p")}`}</TableCell>
+                                <TableCell className="text-right text-xs sm:text-sm">{formatDuration(entry.duration)}</TableCell>
                                 <TableCell className="text-right">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>

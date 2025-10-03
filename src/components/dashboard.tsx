@@ -320,14 +320,14 @@ export function Dashboard({ user }: DashboardProps) {
             <Logo className="h-8 w-8 text-primary" />
             <h1 className="text-xl font-bold tracking-tight">TaskWise</h1>
         </div>
-        <div className="flex items-center gap-4">
-           <span className="flex items-center gap-2 text-lg font-bold text-primary">
+        <div className="flex items-center gap-2 md:gap-4">
+           <span className="hidden md:flex items-center gap-2 text-lg font-bold text-primary">
             <Sparkles className="h-5 w-5" />
             Hello, {user?.displayName || "User"}!
           </span>
-          <Button onClick={handleAddNewTaskClick}>
-            <Plus className="-ml-1 mr-2 h-4 w-4" />
-            Add Task
+           <Button onClick={handleAddNewTaskClick} size="sm" className="md:w-auto">
+            <Plus className="-ml-1 md:mr-2 h-4 w-4" />
+            <span className="hidden md:inline">Add Task</span>
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -362,8 +362,8 @@ export function Dashboard({ user }: DashboardProps) {
       </header>
 
       <main className="flex-1 overflow-auto p-4 md:p-6">
-        <div className="grid lg:grid-cols-[350px_1fr] xl:grid-cols-[400px_1fr] gap-6 max-w-7xl mx-auto">
-          <aside className="space-y-6 lg:sticky lg:top-6">
+        <div className="grid md:grid-cols-[300px_1fr] lg:grid-cols-[350px_1fr] xl:grid-cols-[400px_1fr] gap-6 max-w-7xl mx-auto">
+          <aside className="space-y-6 md:sticky md:top-6">
             <TaskProgress
               title="Today's Progress"
               totalTasks={tasksForSelectedDay.length}

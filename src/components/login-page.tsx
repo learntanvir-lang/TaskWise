@@ -85,14 +85,14 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950">
-      <div className="flex flex-col items-center mb-8">
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950 p-4">
+      <div className="flex flex-col items-center mb-8 w-full max-w-sm">
         <div className="flex items-center gap-2 mb-4">
             <Logo className="h-12 w-12 text-primary" />
             <h1 className="text-4xl font-bold tracking-tight">TaskWise</h1>
         </div>
-        <p className="text-muted-foreground">A modern time and task management app</p>
-        <Tabs defaultValue="login" className="w-[400px] mt-8">
+        <p className="text-muted-foreground text-center">A modern time and task management app</p>
+        <Tabs defaultValue="login" className="w-full mt-8">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
