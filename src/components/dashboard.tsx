@@ -61,13 +61,14 @@ export function Dashboard({ user }: DashboardProps) {
           id: doc.id,
           ...data,
           dueDate: (data.dueDate as Timestamp).toDate(),
-          timeEntries: data.timeEntries?.map((entry: any) => (
+          timeEntries: (data.timeEntries || []).map((entry: any) => (
             entry && entry.startTime && entry.endTime ? { 
-                ...entry, 
+                ...entry,
+                id: entry.id || nanoid(), // Assign an ID if it's missing
                 startTime: (entry.startTime as Timestamp).toDate(),
                 endTime: (entry.endTime as Timestamp).toDate(),
-            } : entry
-          )).filter(Boolean) || [],
+            } : null
+          )).filter(Boolean) as TimeEntry[],
         } as Task;
       });
       setTasks(tasksData);
@@ -127,6 +128,7 @@ export function Dashboard({ user }: DashboardProps) {
       dueDate: Timestamp.fromDate(taskData.dueDate),
       timeEntries: (taskData.timeEntries || []).map(entry => ({
         ...entry,
+        id: entry.id || nanoid(),
         startTime: Timestamp.fromDate(entry.startTime),
         endTime: Timestamp.fromDate(entry.endTime),
       }))
@@ -221,7 +223,7 @@ export function Dashboard({ user }: DashboardProps) {
         });
         errorEmitter.emit('permission-error', permissionError);
     });
-  }, [tasks, toast]);
+  }, [tasks]);
   
   const handleTimeEntryUpdate = async (taskId: string, updatedEntry: TimeEntry) => {
     const task = tasks.find(t => t.id === taskId);
@@ -240,7 +242,6 @@ export function Dashboard({ user }: DashboardProps) {
       );
     }
     
-    // We must convert dates back to timestamps before sending to Firestore
     const entriesForFirestore = updatedEntries.map(e => ({
       ...e,
       startTime: Timestamp.fromDate(e.startTime),
@@ -252,7 +253,6 @@ export function Dashboard({ user }: DashboardProps) {
       timeEntries: entriesForFirestore,
     });
   
-    // Recalculate total time
     await recalculateTotalTime(taskId, updatedEntries);
   };
 
@@ -260,21 +260,21 @@ export function Dashboard({ user }: DashboardProps) {
     const task = tasks.find(t => t.id === taskId);
     if (!task || !task.timeEntries) return;
 
-    const updatedEntries = task.timeEntries.filter(e => e.id !== entryId);
-
-    // Convert dates back to timestamps for Firestore
-    const entriesForFirestore = updatedEntries.map(e => ({
-        ...e,
-        startTime: Timestamp.fromDate(e.startTime),
-        endTime: Timestamp.fromDate(e.endTime),
-    }));
+    const entryToDelete = task.timeEntries.find(e => e.id === entryId);
+    if (!entryToDelete) return;
+    
+    const entryForFirestore = {
+        ...entryToDelete,
+        startTime: Timestamp.fromDate(entryToDelete.startTime),
+        endTime: Timestamp.fromDate(entryToDelete.endTime),
+    };
 
     const taskDoc = doc(db, "tasks", taskId);
     await updateDoc(taskDoc, {
-        timeEntries: entriesForFirestore
+        timeEntries: arrayRemove(entryForFirestore)
     });
     
-    // Recalculate total time
+    const updatedEntries = task.timeEntries.filter(e => e.id !== entryId);
     await recalculateTotalTime(taskId, updatedEntries);
   };
   
