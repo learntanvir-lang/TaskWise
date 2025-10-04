@@ -178,20 +178,20 @@ export function TaskItem({
       )}
       <CardFooter className="flex flex-wrap items-center gap-2 p-4 pt-0 ml-12">
         <Badge variant="outline" className={cn(
-          "text-xs", 
+          "text-xs shadow-sm", 
           isOverdue ? "border-destructive text-destructive" : "border-primary"
         )}>
           <CalendarIcon className="mr-1 h-3 w-3" />
           {isToday(task.dueDate) ? "Today" : format(task.dueDate, "MMM d")}
         </Badge>
-        <Badge variant="secondary" className="capitalize border-primary">
+        <Badge variant="secondary" className="capitalize border-primary shadow-sm">
           {getCategoryIcon(task.category)}
           <span className="ml-1">{task.category}</span>
         </Badge>
         {(totalTime > 0) && (
             <Badge 
               variant="outline"
-              className="text-xs cursor-pointer border-primary"
+              className="text-xs cursor-pointer border-primary shadow-sm"
               onClick={() => onTimeLogClick(task)}
               aria-label="View time log"
             >
