@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -187,7 +188,7 @@ export function TaskItem({
       <CardFooter className="flex flex-wrap items-center gap-2 p-4 pt-0">
         <Badge variant="outline" className={cn(
           "text-xs", 
-          isOverdue ? "border-destructive text-destructive" : ""
+          isOverdue ? "border-destructive text-destructive" : "border-primary"
         )}>
           <CalendarIcon className="mr-1 h-3 w-3" />
           {isToday(task.dueDate) ? "Today" : format(task.dueDate, "MMM d")}
