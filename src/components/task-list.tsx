@@ -1,9 +1,11 @@
 // src/components/task-list.tsx
 "use client";
 
+import { useEffect, useState } from 'react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from 'react-beautiful-dnd';
 import type { Task } from "@/lib/types";
 import { TaskItem } from "./task-item";
+import { Skeleton } from './ui/skeleton';
 
 type TaskListProps = {
   tasks: Task[];
@@ -28,6 +30,12 @@ export function TaskList({
   onTimeLogClick,
   onTaskOrderChange,
 }: TaskListProps) {
+    
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const onDragEnd = (result: DropResult) => {
     const { destination, source } = result;
@@ -50,6 +58,14 @@ export function TaskList({
     onTaskOrderChange(newTasks);
   };
 
+  if (!isClient) {
+    return <div className="space-y-3">
+        <Skeleton className="h-[125px] w-full" />
+        <Skeleton className="h-[125px] w-full" />
+        <Skeleton className="h-[125px] w-full" />
+    </div>;
+  }
+  
   if (tasks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted bg-muted/20 p-8 text-center h-full min-h-[300px]">
@@ -70,7 +86,7 @@ export function TaskList({
                 >
                     {tasks.map((task, index) => (
                         <Draggable key={task.id} draggableId={task.id} index={index}>
-                            {(provided, snapshot) => (
+                            {(provided) => (
                                 <div
                                     ref={provided.innerRef}
                                     {...provided.draggableProps}

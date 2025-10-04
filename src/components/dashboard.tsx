@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import dynamic from 'next/dynamic';
 import { format, isSameDay } from "date-fns";
 import { Plus, Sparkles, User as UserIcon, KeyRound, LogOut } from "lucide-react";
 import {
@@ -27,7 +28,6 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { CreateTaskDialog } from "./create-task-dialog";
-import { TaskList } from "./task-list";
 import { TaskProgress } from "./task-progress";
 import { useAuth, type User } from "@/hooks/use-auth";
 import { TimeLogDialog } from "./time-log-dialog";
@@ -46,6 +46,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Logo } from "./icons";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TasksOverview } from "./tasks-overview";
+import { Skeleton } from "./ui/skeleton";
+
+const TaskList = dynamic(() => import('./task-list').then(mod => mod.TaskList), {
+    ssr: false,
+    loading: () => <div className="space-y-3">
+        <Skeleton className="h-[125px] w-full" />
+        <Skeleton className="h-[125px] w-full" />
+        <Skeleton className="h-[125px] w-full" />
+    </div>
+});
 
 type DashboardProps = {
   user: User;
@@ -196,13 +206,29 @@ export function Dashboard({ user }: DashboardProps) {
   };
   
   const handleUpdateTaskOrder = async (reorderedTasks: Task[]) => {
+    setTasks(prevTasks => {
+        const newTasks = [...prevTasks];
+        const reorderedIds = new Set(reorderedTasks.map(t => t.id));
+        const unchangedTasks = newTasks.filter(t => !reorderedIds.has(t.id));
+        const updatedTasks = [...reorderedTasks, ...unchangedTasks].sort((a, b) => {
+            if (isSameDay(a.dueDate, selectedDate!) && isSameDay(b.dueDate, selectedDate!)) {
+                const aIndex = reorderedTasks.findIndex(t => t.id === a.id);
+                const bIndex = reorderedTasks.findIndex(t => t.id === b.id);
+                if (aIndex > -1 && bIndex > -1) return aIndex - bIndex;
+            }
+            return (a.order || 0) - (b.order || 0);
+        });
+        
+        return updatedTasks;
+    });
+
     const batch = writeBatch(db);
     reorderedTasks.forEach((task, index) => {
         const taskRef = doc(db, "tasks", task.id);
         batch.update(taskRef, { order: index });
     });
     
-    batch.commit().catch(async (serverError) => {
+    await batch.commit().catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
             path: "tasks/",
             operation: 'update',
