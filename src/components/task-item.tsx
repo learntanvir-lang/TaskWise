@@ -203,7 +203,7 @@ export function TaskItem({
         {(totalTime > 0) && (
             <Badge 
               variant="outline"
-              className="text-xs cursor-pointer"
+              className="text-xs cursor-pointer border-primary"
               onClick={() => onTimeLogClick(task)}
               aria-label="View time log"
             >
