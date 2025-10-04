@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import dynamic from 'next/dynamic';
-import { format, isSameDay } from "date-fns";
+import { format, isSameDay, startOfToday, isPast } from "date-fns";
 import { Plus, Sparkles, User as UserIcon, KeyRound, LogOut } from "lucide-react";
 import {
   collection,
@@ -47,6 +47,7 @@ import { Logo } from "./icons";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TasksOverview } from "./tasks-overview";
 import { Skeleton } from "./ui/skeleton";
+import { OverdueTasks } from "./overdue-tasks";
 
 const TaskList = dynamic(() => import('./task-list').then(mod => mod.TaskList), {
     ssr: false,
@@ -211,7 +212,7 @@ export function Dashboard({ user }: DashboardProps) {
         const reorderedIds = new Set(reorderedTasks.map(t => t.id));
         const unchangedTasks = newTasks.filter(t => !reorderedIds.has(t.id));
         const updatedTasks = [...reorderedTasks, ...unchangedTasks].sort((a, b) => {
-            if (isSameDay(a.dueDate, selectedDate!) && isSameDay(b.dueDate, selectedDate!)) {
+            if (selectedDate && isSameDay(a.dueDate, selectedDate) && isSameDay(b.dueDate, selectedDate)) {
                 const aIndex = reorderedTasks.findIndex(t => t.id === a.id);
                 const bIndex = reorderedTasks.findIndex(t => t.id === b.id);
                 if (aIndex > -1 && bIndex > -1) return aIndex - bIndex;
@@ -344,6 +345,21 @@ export function Dashboard({ user }: DashboardProps) {
     });
   };
 
+  const handleRescheduleTask = async (taskId: string, newDate: Date) => {
+    const taskDoc = doc(db, "tasks", taskId);
+    const dataToSave = { dueDate: Timestamp.fromDate(newDate) };
+    updateDoc(taskDoc, dataToSave)
+    .then(() => {
+        toast({ title: "Task Rescheduled", description: "The task has been moved to the selected date." });
+    }).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: taskDoc.path,
+            operation: 'update',
+            requestResourceData: dataToSave,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
+  };
 
   const tasksForSelectedDay = useMemo(() => {
     if (!selectedDate) return [];
@@ -351,6 +367,13 @@ export function Dashboard({ user }: DashboardProps) {
       .filter((task) => isSameDay(task.dueDate, selectedDate))
       .sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [tasks, selectedDate]);
+
+  const overdueTasks = useMemo(() => {
+    const today = startOfToday();
+    return tasks.filter(task => !task.isCompleted && isPast(task.dueDate) && !isSameDay(task.dueDate, today));
+  }, [tasks]);
+  
+  const showOverdue = selectedDate ? overdueTasks.length > 0 && (isSameDay(selectedDate, new Date()) || selectedDate > new Date()) : false;
 
   const completedTasksForSelectedDay = useMemo(() => tasksForSelectedDay.filter(t => t.isCompleted).length, [tasksForSelectedDay]);
   const totalTimeForSelectedDay = useMemo(() => {
@@ -454,8 +477,16 @@ export function Dashboard({ user }: DashboardProps) {
                     </TabsList>
                 </Tabs>
             </div>
-            <div className="h-full">
+            <div className="h-full space-y-4">
             {viewMode === 'daily' ? (
+              <>
+                {showOverdue && (
+                  <OverdueTasks
+                    tasks={overdueTasks}
+                    onReschedule={handleRescheduleTask}
+                    selectedDate={selectedDate!}
+                  />
+                )}
                 <TaskList
                   tasks={tasksForSelectedDay}
                   onToggleComplete={handleToggleComplete}
@@ -467,6 +498,7 @@ export function Dashboard({ user }: DashboardProps) {
                   onTimeLogClick={setTimeLogTask}
                   onTaskOrderChange={handleUpdateTaskOrder}
                 />
+              </>
               ) : (
                 <TasksOverview
                     tasks={tasks}
