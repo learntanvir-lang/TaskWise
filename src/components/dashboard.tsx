@@ -432,6 +432,12 @@ export function Dashboard({ user }: DashboardProps) {
         </div>
       </main>
 
+      <footer className="shrink-0">
+        <p className="text-center text-sm text-muted-foreground p-4 border-t">
+            All Right Reserved By TANVIR MAHMUD
+        </p>
+      </footer>
+
       <CreateTaskDialog
         isOpen={isCreateTaskDialogOpen}
         setIsOpen={setCreateTaskDialogOpen}

@@ -89,8 +89,8 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950 p-4">
-      <div className="flex flex-col items-center mb-8 w-full max-w-sm">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950 p-4">
+      <div className="flex flex-col items-center mb-8 w-full max-w-sm flex-1 justify-center">
         <div className="flex items-center gap-2 mb-4">
             <Logo className="h-12 w-12 text-primary" />
             <h1 className="text-4xl font-bold tracking-tight">TaskWise</h1>
@@ -218,6 +218,11 @@ export function LoginPage() {
           </TabsContent>
         </Tabs>
       </div>
+       <footer className="shrink-0 py-4">
+        <p className="text-center text-sm text-muted-foreground">
+            All Right Reserved By TANVIR MAHMUD
+        </p>
+      </footer>
     </div>
   );
 }
