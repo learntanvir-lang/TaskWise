@@ -43,10 +43,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Logo } from "./icons";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TasksOverview } from "./tasks-overview";
 
 type DashboardProps = {
   user: User;
 };
+
+type ViewMode = "daily" | "weekly" | "monthly";
 
 export function Dashboard({ user }: DashboardProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -58,6 +62,7 @@ export function Dashboard({ user }: DashboardProps) {
   const { toast } = useToast();
   const { signOut } = useAuth();
   const [timeLogTask, setTimeLogTask] = useState<Task | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("daily");
 
   useEffect(() => {
     if (!user) return;
@@ -389,20 +394,39 @@ export function Dashboard({ user }: DashboardProps) {
           </aside>
 
           <section className="min-w-0">
-            <h2 className="text-2xl font-bold mb-4">
-              Tasks for {selectedDate ? format(selectedDate, "PPP") : '...'}
-            </h2>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">
+                {viewMode === 'daily' && (selectedDate ? format(selectedDate, "PPP") : 'Tasks')}
+                {viewMode === 'weekly' && 'Weekly Overview'}
+                {viewMode === 'monthly' && 'Monthly Overview'}
+                </h2>
+                <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
+                    <TabsList>
+                        <TabsTrigger value="daily">Daily</TabsTrigger>
+                        <TabsTrigger value="weekly">Weekly</TabsTrigger>
+                        <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+            </div>
             <div className="h-full">
-              <TaskList
-                tasks={tasksForSelectedDay}
-                onToggleComplete={handleToggleComplete}
-                onDelete={handleDeleteTask}
-                onEdit={handleEditTask}
-                activeTimer={activeTimer}
-                setActiveTimer={setActiveTimer}
-                updateTaskTime={updateTaskTime}
-                onTimeLogClick={setTimeLogTask}
-              />
+            {viewMode === 'daily' ? (
+                <TaskList
+                  tasks={tasksForSelectedDay}
+                  onToggleComplete={handleToggleComplete}
+                  onDelete={handleDeleteTask}
+                  onEdit={handleEditTask}
+                  activeTimer={activeTimer}
+                  setActiveTimer={setActiveTimer}
+                  updateTaskTime={updateTaskTime}
+                  onTimeLogClick={setTimeLogTask}
+                />
+              ) : (
+                <TasksOverview
+                    tasks={tasks}
+                    viewMode={viewMode}
+                    selectedDate={selectedDate || new Date()}
+                />
+              )}
             </div>
           </section>
         </div>
