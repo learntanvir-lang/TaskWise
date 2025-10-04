@@ -220,7 +220,7 @@ export function LoginPage() {
       </div>
        <footer className="shrink-0 py-4">
         <p className="text-center text-sm text-muted-foreground">
-            All Right Reserved By TANVIR MAHMUD
+            All Right Reserved By <span className="font-semibold text-lg text-primary">TANVIR MAHMUD</span>
         </p>
       </footer>
     </div>
