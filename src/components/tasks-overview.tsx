@@ -3,8 +3,8 @@
 
 import { useMemo } from "react";
 import {
-  Bar,
-  BarChart,
+  Line,
+  LineChart,
   ResponsiveContainer,
   XAxis,
   YAxis,
@@ -72,6 +72,7 @@ export function TasksOverview({
 }: TasksOverviewProps) {
     const { theme: mode } = useTheme();
     const theme = themes.find((t) => t.name === (mode || 'light'));
+    const primaryColor = `hsl(${theme?.cssVars.dark.primary})`;
   
     const chartData = useMemo(() => {
         if (viewMode === "weekly") {
@@ -91,7 +92,6 @@ export function TasksOverview({
         
         if (viewMode === 'monthly') {
             const monthStart = startOfMonth(selectedDate);
-            const monthEnd = endOfMonth(selectedDate);
             const weeksInMonth = getWeeksInMonth(selectedDate, { weekStartsOn: 1 });
 
             const weeklyData = Array.from({ length: weeksInMonth }, (_, i) => {
@@ -134,7 +134,7 @@ export function TasksOverview({
       </CardHeader>
       <CardContent className="pl-2">
         <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={chartData}>
+          <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke={theme?.cssVars.dark.border} />
             <XAxis
               dataKey="name"
@@ -152,10 +152,17 @@ export function TasksOverview({
             />
             <Tooltip
               content={<CustomTooltip />}
-              cursor={{ fill: theme?.cssVars.dark['secondary'] }}
+              cursor={{ stroke: primaryColor, strokeWidth: 2, strokeDasharray: "3 3" }}
             />
-            <Bar dataKey="total" fill={theme?.cssVars.dark.primary} radius={[4, 4, 0, 0]} />
-          </BarChart>
+            <Line 
+              type="monotone" 
+              dataKey="total" 
+              stroke={primaryColor}
+              strokeWidth={2}
+              activeDot={{ r: 8 }}
+              dot={{ stroke: primaryColor, strokeWidth: 2, r: 4, fill: primaryColor }}
+            />
+          </LineChart>
         </ResponsiveContainer>
       </CardContent>
     </Card>
