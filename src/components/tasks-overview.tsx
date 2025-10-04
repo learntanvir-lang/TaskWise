@@ -1,7 +1,7 @@
 // src/components/tasks-overview.tsx
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Line,
   LineChart,
@@ -21,7 +21,6 @@ import {
   isSameMonth,
   getWeeksInMonth,
   startOfMonth,
-  endOfMonth,
   addWeeks,
 } from "date-fns";
 
@@ -29,6 +28,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type Task } from "@/lib/types";
 import { useTheme } from "next-themes";
 import { themes } from "@/themes";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type TasksOverviewProps = {
   tasks: Task[];
@@ -38,6 +38,7 @@ type TasksOverviewProps = {
 
 const formatTimeForAxis = (seconds: number) => {
   const hours = seconds / 3600;
+  if (hours < 0.1) return "0h";
   return `${hours.toFixed(1)}h`;
 };
 
@@ -65,16 +66,29 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
+const ChartLoader = () => (
+    <div className="space-y-4">
+        <div className="flex justify-between items-center">
+            <Skeleton className="h-6 w-1/3" />
+            <Skeleton className="h-8 w-20" />
+        </div>
+        <Skeleton className="h-[350px] w-full" />
+    </div>
+);
+
+
 export function TasksOverview({
   tasks,
   viewMode,
   selectedDate,
 }: TasksOverviewProps) {
     const { theme: mode } = useTheme();
+    const [isLoading, setIsLoading] = useState(true);
     const theme = themes.find((t) => t.name === (mode || 'light'));
     const primaryColor = `hsl(${theme?.cssVars.dark.primary})`;
   
     const chartData = useMemo(() => {
+        setIsLoading(true);
         if (viewMode === "weekly") {
         const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
         const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
@@ -111,6 +125,13 @@ export function TasksOverview({
 
         return [];
     }, [tasks, viewMode, selectedDate]);
+    
+    useEffect(() => {
+        // Simulate a small delay to allow for render, then show the chart
+        const timer = setTimeout(() => setIsLoading(false), 0);
+        return () => clearTimeout(timer);
+    }, [chartData]);
+
 
     const totalTime = useMemo(() => {
         return chartData.reduce((acc, data) => acc + data.total, 0);
@@ -121,6 +142,16 @@ export function TasksOverview({
         const minutes = Math.floor((seconds % 3600) / 60);
         return `${hours}h ${minutes}m`;
     };
+    
+    if (isLoading) {
+        return (
+            <Card>
+                <CardContent className="p-6">
+                    <ChartLoader />
+                </CardContent>
+            </Card>
+        )
+    }
 
   return (
     <Card>
@@ -134,7 +165,7 @@ export function TasksOverview({
       </CardHeader>
       <CardContent className="pl-2">
         <ResponsiveContainer width="100%" height={350}>
-          <LineChart data={chartData}>
+          <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={theme?.cssVars.dark.border} />
             <XAxis
               dataKey="name"
