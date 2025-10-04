@@ -434,7 +434,7 @@ export function Dashboard({ user }: DashboardProps) {
 
       <footer className="shrink-0">
         <p className="text-center text-sm text-muted-foreground p-4 border-t">
-            All Right Reserved By <span className="font-semibold text-lg text-primary">TANVIR MAHMUD</span>
+            All Right Reserved By <span className="font-semibold text-base text-primary">TANVIR MAHMUD</span>
         </p>
       </footer>
 
