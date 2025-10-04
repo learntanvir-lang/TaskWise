@@ -16,6 +16,7 @@ import {
   arrayUnion,
   arrayRemove,
   onSnapshot,
+  writeBatch,
 } from "firebase/firestore";
 import { nanoid } from "nanoid";
 
@@ -109,14 +110,16 @@ export function Dashboard({ user }: DashboardProps) {
   }, [user, timeLogTask?.id]);
 
 
-  const handleAddTask = async (newTaskData: Omit<Task, 'id' | 'isCompleted' | 'timeSpent' | 'userId'>) => {
+  const handleAddTask = async (newTaskData: Omit<Task, 'id' | 'isCompleted' | 'timeSpent' | 'userId' | 'order'>) => {
     const tasksCollectionRef = collection(db, "tasks");
+    const maxOrder = tasks.reduce((max, task) => Math.max(max, task.order || 0), 0);
     const dataToSave = {
         ...newTaskData,
         userId: user.uid,
         isCompleted: false,
         timeSpent: 0,
         timeEntries: [],
+        order: maxOrder + 1,
         dueDate: Timestamp.fromDate(newTaskData.dueDate),
     };
     addDoc(tasksCollectionRef, dataToSave)
@@ -187,6 +190,23 @@ export function Dashboard({ user }: DashboardProps) {
         const permissionError = new FirestorePermissionError({
             path: taskDoc.path,
             operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
+  };
+  
+  const handleUpdateTaskOrder = async (reorderedTasks: Task[]) => {
+    const batch = writeBatch(db);
+    reorderedTasks.forEach((task, index) => {
+        const taskRef = doc(db, "tasks", task.id);
+        batch.update(taskRef, { order: index });
+    });
+    
+    batch.commit().catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: "tasks/",
+            operation: 'update',
+            requestResourceData: { order: "..." },
         });
         errorEmitter.emit('permission-error', permissionError);
     });
@@ -303,7 +323,7 @@ export function Dashboard({ user }: DashboardProps) {
     if (!selectedDate) return [];
     return tasks
       .filter((task) => isSameDay(task.dueDate, selectedDate))
-      .sort((a, b) => (a.isCompleted ? 1 : -1) - (b.isCompleted ? 1 : -1) || a.title.localeCompare(b.title));
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [tasks, selectedDate]);
 
   const completedTasksForSelectedDay = useMemo(() => tasksForSelectedDay.filter(t => t.isCompleted).length, [tasksForSelectedDay]);
@@ -419,6 +439,7 @@ export function Dashboard({ user }: DashboardProps) {
                   setActiveTimer={setActiveTimer}
                   updateTaskTime={updateTaskTime}
                   onTimeLogClick={setTimeLogTask}
+                  onTaskOrderChange={handleUpdateTaskOrder}
                 />
               ) : (
                 <TasksOverview

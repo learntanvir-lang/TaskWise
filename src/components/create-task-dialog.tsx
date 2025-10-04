@@ -1,14 +1,13 @@
 // src/components/create-task-dialog.tsx
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
-import { CalendarIcon, Loader2, Sparkles } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 
-import { suggestPriorityAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -41,15 +40,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { categories, priorities, type Task } from "@/lib/types";
+import { categories, type Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   dueDate: z.date({ required_error: "A due date is required." }),
-  priority: z.enum(priorities),
   category: z.string({ required_error: "Category is required" }),
   customCategory: z.string().optional(),
 }).refine(data => {
@@ -67,23 +64,18 @@ type TaskFormValues = z.infer<typeof taskSchema>;
 type CreateTaskDialogProps = {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  onTaskCreate: (task: Omit<Task, 'id' | 'isCompleted' | 'timeSpent' | 'userId'>) => void;
+  onTaskCreate: (task: Omit<Task, 'id' | 'isCompleted' | 'timeSpent' | 'userId' | 'order'>) => void;
   onTaskUpdate: (task: Task) => void;
   taskToEdit: Task | null;
 };
 
 export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate, taskToEdit }: CreateTaskDialogProps) {
-  const [isAiPending, startAiTransition] = useTransition();
-  const [aiSuggestion, setAiSuggestion] = useState<{priority: string, reason: string} | null>(null);
-  const { toast } = useToast();
-
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
       title: "",
       description: "",
       dueDate: new Date(),
-      priority: "medium",
       category: "personal",
       customCategory: "",
     },
@@ -104,40 +96,11 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
         title: "",
         description: "",
         dueDate: new Date(),
-        priority: "medium",
         category: "personal",
         customCategory: "",
       });
     }
-    setAiSuggestion(null);
   }, [taskToEdit, isOpen, form]);
-
-  const handleSuggestPriority = async () => {
-    const { title, description, dueDate } = form.getValues();
-    const taskContent = `${title} ${description || ''}`.trim();
-    if (!taskContent) {
-      form.setError("title", { message: "Please enter a title or description first."});
-      return;
-    }
-
-    startAiTransition(async () => {
-      const result = await suggestPriorityAction({
-        description: taskContent,
-        deadline: format(dueDate, "yyyy-MM-dd"),
-      });
-
-      if (result.success && result.data) {
-        form.setValue("priority", result.data.priority as "low" | "medium" | "high", { shouldValidate: true });
-        setAiSuggestion(result.data);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "AI Suggestion Failed",
-          description: result.error,
-        });
-      }
-    });
-  };
 
   function onSubmit(data: TaskFormValues) {
     const { customCategory, ...taskData } = data;
@@ -276,46 +239,6 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
                 />
             )}
             
-            <FormField
-              control={form.control}
-              name="priority"
-              render={({ field }) => (
-                <FormItem>
-                    <div className="flex justify-between items-center">
-                        <FormLabel>Priority</FormLabel>
-                        <Button type="button" variant="ghost" size="sm" onClick={handleSuggestPriority} disabled={isAiPending}>
-                            {isAiPending ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                                <Sparkles className="mr-2 h-4 w-4 text-yellow-500" />
-                            )}
-                            Suggest
-                        </Button>
-                    </div>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a priority" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {priorities.map((priority) => (
-                        <SelectItem key={priority} value={priority} className="capitalize">
-                          {priority}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {aiSuggestion && aiSuggestion.priority === field.value && (
-                     <p className="text-xs text-muted-foreground mt-1 p-2 bg-secondary rounded-md">
-                        <span className="font-semibold">AI Suggestion:</span> {aiSuggestion.reason}
-                    </p>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
               <Button type="submit">{taskToEdit ? 'Save Changes' : 'Create Task'}</Button>
