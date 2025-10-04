@@ -196,7 +196,7 @@ export function TaskItem({
           {priorityIcons[task.priority]}
           <span className="ml-1">{task.priority}</span>
         </Badge>
-        <Badge variant="secondary" className="capitalize">
+        <Badge variant="secondary" className="capitalize border-primary">
           {getCategoryIcon(task.category)}
           <span className="ml-1">{task.category}</span>
         </Badge>
