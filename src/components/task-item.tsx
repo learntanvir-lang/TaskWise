@@ -122,7 +122,7 @@ export function TaskItem({
   const totalTime = task.timeSpent + elapsedTime;
 
   return (
-    <Card className={cn("transition-all", task.isCompleted && "bg-muted/50", isOverdue && "border-destructive/50")}>
+    <Card className={cn("transition-all", task.isCompleted && "bg-muted/50", isOverdue && "border-destructive/50 shadow-md shadow-destructive/20")}>
       <CardHeader className="flex flex-row items-center gap-4 space-y-0 p-4">
         <div className="flex items-center gap-2">
             <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />

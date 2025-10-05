@@ -443,7 +443,7 @@ export function Dashboard({ user }: DashboardProps) {
 
       <main className="flex-1 overflow-auto p-4 md:p-6">
         <div className="grid md:grid-cols-[300px_1fr] lg:grid-cols-[350px_1fr] xl:grid-cols-[400px_1fr] gap-6 max-w-7xl mx-auto">
-          <aside className="space-y-6 md:sticky md:top-6">
+          <aside className="space-y-6 md:sticky md:top-6 self-start">
             <TaskProgress
               title="Today's Progress"
               totalTasks={tasksForSelectedDay.length}
@@ -465,13 +465,13 @@ export function Dashboard({ user }: DashboardProps) {
           </aside>
 
           <section className="min-w-0">
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
+                <h2 className="text-2xl font-bold leading-tight">
                 {viewMode === 'daily' && (selectedDate ? format(selectedDate, "PPP") : 'Tasks')}
                 {viewMode === 'weekly' && 'Weekly Overview'}
                 {viewMode === 'monthly' && 'Monthly Overview'}
                 </h2>
-                <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
+                <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="self-start sm:self-center">
                     <TabsList>
                         <TabsTrigger value="daily">Daily</TabsTrigger>
                         <TabsTrigger value="weekly">Weekly</TabsTrigger>
@@ -554,7 +554,7 @@ export function Dashboard({ user }: DashboardProps) {
             width: 4px;
             height: 4px;
             border-radius: 50%;
-            background-color: hsl(var(--accent));
+            background-color: hsl(var(--primary));
         }
         .has-completed-task {
              position: relative;
