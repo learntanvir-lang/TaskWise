@@ -27,7 +27,7 @@ export function OverdueTasks({ tasks, onReschedule, selectedDate }: OverdueTasks
   return (
     <Accordion type="single" collapsible defaultValue="overdue-tasks">
       <AccordionItem value="overdue-tasks">
-        <AccordionTrigger className="text-destructive hover:no-underline rounded-lg border border-destructive/50 bg-destructive/10 px-4">
+        <AccordionTrigger className="text-destructive hover:no-underline rounded-lg border border-destructive/50 bg-destructive/10 dark:bg-destructive/25 px-4">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5" />
             <span className="font-semibold">{tasks.length} Overdue Task{tasks.length > 1 ? 's' : ''}</span>
