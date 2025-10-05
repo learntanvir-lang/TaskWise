@@ -398,13 +398,13 @@ export function Dashboard({ user }: DashboardProps) {
             <Logo className="h-8 w-8 text-primary" />
             <h1 className="text-xl font-bold tracking-tight">TaskWise</h1>
         </div>
-        <div className="flex items-center gap-2 md:gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
            <span className="hidden md:flex items-center gap-2 text-lg font-bold text-primary">
             <Sparkles className="h-5 w-5" />
             Hello, {user?.displayName || "User"}!
             <Sparkles className="h-5 w-5" />
           </span>
-           <Button onClick={handleAddNewTaskClick} size="sm" className="md:w-auto">
+           <Button onClick={handleAddNewTaskClick} size="sm" className="w-full sm:w-auto">
             <Plus className="-ml-1 md:mr-2 h-4 w-4" />
             <span className="hidden md:inline">Add Task</span>
           </Button>

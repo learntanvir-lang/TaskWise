@@ -123,8 +123,8 @@ export function TaskItem({
 
   return (
     <Card className={cn("transition-all", task.isCompleted && "bg-muted/50", isOverdue && "border-destructive/50 shadow-md shadow-destructive/20")}>
-      <CardHeader className="flex flex-row items-center gap-4 space-y-0 p-4">
-        <div className="flex items-center gap-2">
+      <CardHeader className="flex flex-row items-start gap-4 space-y-0 p-4">
+        <div className="flex items-center gap-2 pt-1">
             <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
             <Checkbox
               id={`task-${task.id}`}
@@ -133,9 +133,16 @@ export function TaskItem({
               aria-label={`Mark ${task.title} as ${task.isCompleted ? 'incomplete' : 'complete'}`}
             />
         </div>
-        <CardTitle className={cn("flex-1 text-base font-medium", task.isCompleted && "text-muted-foreground line-through")}>
-          {task.title}
-        </CardTitle>
+        <div className="flex-1">
+          <CardTitle className={cn("text-base font-medium", task.isCompleted && "text-muted-foreground line-through")}>
+            {task.title}
+          </CardTitle>
+          {task.description && (
+            <p className={cn("text-sm text-muted-foreground mt-1", task.isCompleted && "line-through")}>
+              {task.description}
+            </p>
+          )}
+        </div>
         <div className="flex items-center gap-2">
             {!task.isCompleted && (
                  <Button
@@ -169,13 +176,6 @@ export function TaskItem({
             </DropdownMenu>
         </div>
       </CardHeader>
-      {task.description && (
-        <CardContent className="px-4 pb-2 pt-0 ml-12">
-          <p className={cn("text-sm text-muted-foreground", task.isCompleted && "line-through")}>
-            {task.description}
-          </p>
-        </CardContent>
-      )}
       <CardFooter className="flex flex-wrap items-center gap-2 p-4 pt-0 ml-12">
         <Badge variant="outline" className={cn(
           "text-xs shadow-sm", 

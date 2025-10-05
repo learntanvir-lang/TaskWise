@@ -298,7 +298,7 @@ export function TimeLogDialog({ isOpen, setIsOpen, task, onTimeEntryUpdate, onTi
                     <TableHead>Date</TableHead>
                     <TableHead>Time</TableHead>
                     <TableHead className="text-right">Duration</TableHead>
-                    <TableHead className="w-[80px] text-right">Actions</TableHead>
+                    <TableHead className="w-[50px] sm:w-[80px] text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>

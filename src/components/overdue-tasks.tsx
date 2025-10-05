@@ -51,7 +51,7 @@ export function OverdueTasks({ tasks, onReschedule, selectedDate }: OverdueTasks
                   variant="ghost"
                   onClick={() => onReschedule(task.id, selectedDate)}
                   aria-label={`Reschedule ${task.title}`}
-                  className="self-end sm:self-center"
+                  className="self-end sm:self-center w-full sm:w-auto"
                 >
                   <CalendarPlus className="mr-2 h-4 w-4" />
                   Move to Today
