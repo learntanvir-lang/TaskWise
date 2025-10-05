@@ -8,6 +8,9 @@ import { ThemeProvider } from '@/components/theme-provider';
 export const metadata: Metadata = {
   title: 'TaskWise',
   description: 'A modern time and task management app',
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
