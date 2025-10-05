@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icon.svg",
   },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
