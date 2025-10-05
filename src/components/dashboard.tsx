@@ -392,7 +392,7 @@ export function Dashboard({ user }: DashboardProps) {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50/50 dark:bg-gray-950/50">
+    <div className="flex flex-col min-h-screen bg-gray-50/50 dark:bg-gray-950/50">
       <header className="flex items-center justify-between p-4 border-b shrink-0 bg-white dark:bg-gray-900">
         <div className="flex items-center gap-2">
             <Logo className="h-8 w-8 text-primary" />
@@ -441,77 +441,79 @@ export function Dashboard({ user }: DashboardProps) {
         </div>
       </header>
 
-      <main className="flex-1 overflow-auto p-4 md:p-6">
-        <div className="grid md:grid-cols-[300px_1fr] lg:grid-cols-[350px_1fr] xl:grid-cols-[400px_1fr] gap-6 max-w-7xl mx-auto">
-          <aside className="space-y-6 md:sticky md:top-6 self-start">
-            <TaskProgress
-              title="Today's Progress"
-              totalTasks={tasksForSelectedDay.length}
-              completedTasks={completedTasksForSelectedDay}
-              totalTimeSpent={totalTimeForSelectedDay}
-            />
-            <Card>
-              <CardContent className="p-1">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  className="w-full"
-                  modifiers={taskDateModifiers}
-                  modifiersClassNames={taskDateModifiersClassNames}
-                />
-              </CardContent>
-            </Card>
-          </aside>
+      <div className="flex flex-1 w-full">
+        <main className="flex-1 overflow-auto p-4 md:p-6">
+          <div className="grid md:grid-cols-[300px_1fr] lg:grid-cols-[350px_1fr] xl:grid-cols-[400px_1fr] gap-6 max-w-7xl mx-auto">
+            <aside className="space-y-6 md:sticky md:top-6 self-start">
+              <TaskProgress
+                title="Today's Progress"
+                totalTasks={tasksForSelectedDay.length}
+                completedTasks={completedTasksForSelectedDay}
+                totalTimeSpent={totalTimeForSelectedDay}
+              />
+              <Card>
+                <CardContent className="p-1">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    className="w-full"
+                    modifiers={taskDateModifiers}
+                    modifiersClassNames={taskDateModifiersClassNames}
+                  />
+                </CardContent>
+              </Card>
+            </aside>
 
-          <section className="min-w-0">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
-                <h2 className="text-2xl font-bold leading-tight">
-                {viewMode === 'daily' && (selectedDate ? format(selectedDate, "PPP") : 'Tasks')}
-                {viewMode === 'weekly' && 'Weekly Overview'}
-                {viewMode === 'monthly' && 'Monthly Overview'}
-                </h2>
-                <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="self-start sm:self-center">
-                    <TabsList>
-                        <TabsTrigger value="daily">Daily</TabsTrigger>
-                        <TabsTrigger value="weekly">Weekly</TabsTrigger>
-                        <TabsTrigger value="monthly">Monthly</TabsTrigger>
-                    </TabsList>
-                </Tabs>
-            </div>
-            <div className="h-full space-y-4">
-            {viewMode === 'daily' ? (
-              <>
-                {showOverdue && (
-                  <OverdueTasks
-                    tasks={overdueTasks}
-                    onReschedule={handleRescheduleTask}
-                    selectedDate={selectedDate!}
+            <section className="min-w-0">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
+                  <h2 className="text-2xl font-bold leading-tight">
+                  {viewMode === 'daily' && (selectedDate ? format(selectedDate, "PPP") : 'Tasks')}
+                  {viewMode === 'weekly' && 'Weekly Overview'}
+                  {viewMode === 'monthly' && 'Monthly Overview'}
+                  </h2>
+                  <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="self-start sm:self-center">
+                      <TabsList>
+                          <TabsTrigger value="daily">Daily</TabsTrigger>
+                          <TabsTrigger value="weekly">Weekly</TabsTrigger>
+                          <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                      </TabsList>
+                  </Tabs>
+              </div>
+              <div className="h-full space-y-4">
+              {viewMode === 'daily' ? (
+                <>
+                  {showOverdue && (
+                    <OverdueTasks
+                      tasks={overdueTasks}
+                      onReschedule={handleRescheduleTask}
+                      selectedDate={selectedDate!}
+                    />
+                  )}
+                  <TaskList
+                    tasks={tasksForSelectedDay}
+                    onToggleComplete={handleToggleComplete}
+                    onDelete={handleDeleteTask}
+                    onEdit={handleEditTask}
+                    activeTimer={activeTimer}
+                    setActiveTimer={setActiveTimer}
+                    updateTaskTime={updateTaskTime}
+                    onTimeLogClick={setTimeLogTask}
+                    onTaskOrderChange={handleUpdateTaskOrder}
+                  />
+                </>
+                ) : (
+                  <TasksOverview
+                      tasks={tasks}
+                      viewMode={viewMode}
+                      selectedDate={selectedDate || new Date()}
                   />
                 )}
-                <TaskList
-                  tasks={tasksForSelectedDay}
-                  onToggleComplete={handleToggleComplete}
-                  onDelete={handleDeleteTask}
-                  onEdit={handleEditTask}
-                  activeTimer={activeTimer}
-                  setActiveTimer={setActiveTimer}
-                  updateTaskTime={updateTaskTime}
-                  onTimeLogClick={setTimeLogTask}
-                  onTaskOrderChange={handleUpdateTaskOrder}
-                />
-              </>
-              ) : (
-                <TasksOverview
-                    tasks={tasks}
-                    viewMode={viewMode}
-                    selectedDate={selectedDate || new Date()}
-                />
-              )}
-            </div>
-          </section>
-        </div>
-      </main>
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
 
       <footer className="shrink-0">
         <p className="text-center text-sm text-muted-foreground p-4 border-t">
