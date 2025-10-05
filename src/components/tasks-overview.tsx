@@ -82,10 +82,13 @@ export function TasksOverview({
   viewMode,
   selectedDate,
 }: TasksOverviewProps) {
-    const { theme: mode } = useTheme();
+    const { resolvedTheme } = useTheme();
     const [isLoading, setIsLoading] = useState(true);
-    const theme = themes.find((t) => t.name === (mode || 'light'));
-    const primaryColor = `hsl(${theme?.cssVars.dark.primary})`;
+    const theme = themes.find((t) => t.name === 'light');
+    const colors = resolvedTheme === 'dark' ? theme?.cssVars.dark : theme?.cssVars.light;
+    const primaryColor = `hsl(${colors?.primary})`;
+    const borderColor = `hsl(${colors?.border})`;
+    const mutedForegroundColor = `hsl(${colors?.["muted-foreground"]})`;
   
     const chartData = useMemo(() => {
         setIsLoading(true);
@@ -143,7 +146,7 @@ export function TasksOverview({
         return `${hours}h ${minutes}m`;
     };
     
-    if (isLoading) {
+    if (isLoading || !resolvedTheme) {
         return (
             <Card>
                 <CardContent className="p-6">
@@ -166,16 +169,16 @@ export function TasksOverview({
       <CardContent className="pl-2">
         <ResponsiveContainer width="100%" height={350}>
           <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={theme?.cssVars.dark.border} />
+            <CartesianGrid strokeDasharray="3 3" stroke={borderColor} />
             <XAxis
               dataKey="name"
-              stroke={theme?.cssVars.dark['muted-foreground']}
+              stroke={mutedForegroundColor}
               fontSize={12}
               tickLine={false}
               axisLine={false}
             />
             <YAxis
-              stroke={theme?.cssVars.dark['muted-foreground']}
+              stroke={mutedForegroundColor}
               fontSize={12}
               tickLine={false}
               axisLine={false}
@@ -190,8 +193,8 @@ export function TasksOverview({
               dataKey="total" 
               stroke={primaryColor}
               strokeWidth={2}
-              activeDot={{ r: 8 }}
-              dot={{ stroke: primaryColor, strokeWidth: 2, r: 4, fill: primaryColor }}
+              activeDot={{ r: 8, fill: primaryColor }}
+              dot={{ stroke: primaryColor, strokeWidth: 2, r: 4, fill: "hsl(var(--background))" }}
             />
           </LineChart>
         </ResponsiveContainer>
