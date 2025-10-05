@@ -358,16 +358,17 @@ export function TimeLogDialog({ isOpen, setIsOpen, task, onTimeEntryUpdate, onTi
                 </TableBody>
             </Table>
         </div>
-         <DialogFooter>
+         <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
             <Button 
                 variant="outline" 
                 onClick={() => { setEditingEntryId(null); setIsAdding(true); }}
                 disabled={isAdding || !!editingEntryId}
+                className="w-full sm:w-auto"
             >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Record
             </Button>
-          <Button type="button" onClick={() => setIsOpen(false)}>Close</Button>
+          <Button type="button" onClick={() => setIsOpen(false)} className="w-full sm:w-auto">Close</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
