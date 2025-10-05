@@ -48,6 +48,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TasksOverview } from "./tasks-overview";
 import { Skeleton } from "./ui/skeleton";
 import { OverdueTasks } from "./overdue-tasks";
+import { ModeToggle } from "./mode-toggle";
 
 const TaskList = dynamic(() => import('./task-list').then(mod => mod.TaskList), {
     ssr: false,
@@ -407,6 +408,7 @@ export function Dashboard({ user }: DashboardProps) {
             <Plus className="-ml-1 md:mr-2 h-4 w-4" />
             <span className="hidden md:inline">Add Task</span>
           </Button>
+          <ModeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
