@@ -239,9 +239,9 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
                 />
             )}
             
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
-              <Button type="submit">{taskToEdit ? 'Save Changes' : 'Create Task'}</Button>
+            <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} className="w-full sm:w-auto">Cancel</Button>
+              <Button type="submit" className="w-full sm:w-auto">{taskToEdit ? 'Save Changes' : 'Create Task'}</Button>
             </DialogFooter>
           </form>
         </Form>
