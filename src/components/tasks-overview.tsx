@@ -1,7 +1,7 @@
 // src/components/tasks-overview.tsx
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import {
   Line,
   LineChart,
@@ -24,12 +24,15 @@ import {
   startOfMonth,
   addWeeks,
 } from "date-fns";
+import { toPng } from "html-to-image";
+import { Download } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type Task } from "@/lib/types";
 import { useTheme } from "next-themes";
 import { themes } from "@/themes";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "./ui/button";
 
 type TasksOverviewProps = {
   tasks: Task[];
@@ -119,11 +122,29 @@ export function TasksOverview({
 }: TasksOverviewProps) {
     const { resolvedTheme } = useTheme();
     const [isLoading, setIsLoading] = useState(true);
+    const chartRef = useRef<HTMLDivElement>(null);
     const theme = themes.find((t) => t.name === 'light');
     const colors = resolvedTheme === 'dark' ? theme?.cssVars.dark : theme?.cssVars.light;
     const primaryColor = `hsl(${colors?.primary})`;
     const borderColor = `hsl(${colors?.border})`;
     const mutedForegroundColor = `hsl(${colors?.["muted-foreground"]})`;
+
+    const handleDownload = useCallback(() => {
+        if (chartRef.current === null) {
+            return;
+        }
+
+        toPng(chartRef.current, { cacheBust: true, backgroundColor: resolvedTheme === 'dark' ? '#0f172a' : '#f8fafc' })
+            .then((dataUrl) => {
+                const link = document.createElement('a');
+                link.download = `tasks-overview-${viewMode}-${format(selectedDate, 'yyyy-MM-dd')}.png`;
+                link.href = dataUrl;
+                link.click();
+            })
+            .catch((err) => {
+                console.error(err);
+            });
+    }, [chartRef, viewMode, selectedDate, resolvedTheme]);
   
     const chartData = useMemo(() => {
         setIsLoading(true);
@@ -195,46 +216,54 @@ export function TasksOverview({
     <Card>
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
-          <span>
-            {viewMode === "weekly" ? "Weekly" : "Monthly"} Time Summary
-          </span>
-          <span className="text-lg font-bold text-primary">{formatTotalTime(totalTime)}</span>
+            <div className="flex flex-col gap-1">
+                <span>
+                    {viewMode === "weekly" ? "Weekly" : "Monthly"} Time Summary
+                </span>
+                <span className="text-lg font-bold text-primary">{formatTotalTime(totalTime)}</span>
+            </div>
+          <Button onClick={handleDownload} variant="outline" size="sm">
+            <Download className="mr-2 h-4 w-4" />
+            Download
+          </Button>
         </CardTitle>
       </CardHeader>
       <CardContent className="pl-2">
-        <ResponsiveContainer width="100%" height={350}>
-          <LineChart data={chartData} margin={{ top: 25, right: 10, left: -20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={borderColor} />
-            <XAxis
-              dataKey="name"
-              stroke={mutedForegroundColor}
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis
-              stroke={mutedForegroundColor}
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={formatTimeForAxis}
-            />
-            <Tooltip
-              content={<CustomTooltip />}
-              cursor={{ stroke: primaryColor, strokeWidth: 2, strokeDasharray: "3 3" }}
-            />
-            <Line 
-              type="monotone" 
-              dataKey="total" 
-              stroke={primaryColor}
-              strokeWidth={2}
-              activeDot={{ r: 8, fill: primaryColor }}
-              dot={{ stroke: primaryColor, strokeWidth: 2, r: 4, fill: "hsl(var(--background))" }}
-            >
-                <LabelList content={<CustomizedLabel />} dataKey="total" />
-            </Line>
-          </LineChart>
-        </ResponsiveContainer>
+        <div ref={chartRef}>
+            <ResponsiveContainer width="100%" height={350}>
+            <LineChart data={chartData} margin={{ top: 25, right: 10, left: -20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={borderColor} />
+                <XAxis
+                dataKey="name"
+                stroke={mutedForegroundColor}
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                />
+                <YAxis
+                stroke={mutedForegroundColor}
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={formatTimeForAxis}
+                />
+                <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ stroke: primaryColor, strokeWidth: 2, strokeDasharray: "3 3" }}
+                />
+                <Line 
+                type="monotone" 
+                dataKey="total" 
+                stroke={primaryColor}
+                strokeWidth={2}
+                activeDot={{ r: 8, fill: primaryColor }}
+                dot={{ stroke: primaryColor, strokeWidth: 2, r: 4, fill: "hsl(var(--background))" }}
+                >
+                    <LabelList content={<CustomizedLabel />} dataKey="total" />
+                </Line>
+            </LineChart>
+            </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );
