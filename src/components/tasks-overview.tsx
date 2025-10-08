@@ -10,6 +10,7 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  LabelList,
 } from "recharts";
 import {
   startOfWeek,
@@ -41,6 +42,14 @@ const formatTimeForAxis = (seconds: number) => {
   if (hours < 0.1) return "0h";
   return `${hours.toFixed(1)}h`;
 };
+
+const CustomizedLabel = (props: any) => {
+    const { x, y, stroke, value } = props;
+    if (value > 0) {
+        return <text x={x} y={y} dy={-10} fill={stroke} fontSize={12} textAnchor="middle">{formatTimeForAxis(value)}</text>;
+    }
+    return null;
+}
 
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -168,7 +177,7 @@ export function TasksOverview({
       </CardHeader>
       <CardContent className="pl-2">
         <ResponsiveContainer width="100%" height={350}>
-          <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+          <LineChart data={chartData} margin={{ top: 15, right: 10, left: -20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={borderColor} />
             <XAxis
               dataKey="name"
@@ -195,7 +204,9 @@ export function TasksOverview({
               strokeWidth={2}
               activeDot={{ r: 8, fill: primaryColor }}
               dot={{ stroke: primaryColor, strokeWidth: 2, r: 4, fill: "hsl(var(--background))" }}
-            />
+            >
+                <LabelList content={<CustomizedLabel />} />
+            </Line>
           </LineChart>
         </ResponsiveContainer>
       </CardContent>
