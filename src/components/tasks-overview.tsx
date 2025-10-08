@@ -134,7 +134,11 @@ export function TasksOverview({
             return;
         }
 
-        toPng(chartRef.current, { cacheBust: true, backgroundColor: resolvedTheme === 'dark' ? '#0f172a' : '#f8fafc' })
+        toPng(chartRef.current, { 
+            cacheBust: true, 
+            backgroundColor: resolvedTheme === 'dark' ? '#0f172a' : '#f8fafc',
+            skipFonts: true
+        })
             .then((dataUrl) => {
                 const link = document.createElement('a');
                 link.download = `tasks-overview-${viewMode}-${format(selectedDate, 'yyyy-MM-dd')}.png`;
@@ -142,7 +146,7 @@ export function TasksOverview({
                 link.click();
             })
             .catch((err) => {
-                console.error(err);
+                console.error('oops, something went wrong!', err);
             });
     }, [chartRef, viewMode, selectedDate, resolvedTheme]);
   
