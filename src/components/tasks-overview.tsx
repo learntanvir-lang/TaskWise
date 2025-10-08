@@ -43,10 +43,23 @@ const formatTimeForAxis = (seconds: number) => {
   return `${hours.toFixed(1)}h`;
 };
 
+const formatTimeForLabel = (totalSeconds: number) => {
+    if (totalSeconds < 60) return null;
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+    const parts = [];
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    
+    return parts.join(' ');
+}
+
 const CustomizedLabel = (props: any) => {
     const { x, y, stroke, value } = props;
-    if (value > 0) {
-        return <text x={x} y={y} dy={-10} fill={stroke} fontSize={12} textAnchor="middle">{formatTimeForAxis(value)}</text>;
+    const formattedTime = formatTimeForLabel(value);
+    if (formattedTime) {
+        return <text x={x} y={y} dy={-10} fill={stroke} fontSize={12} textAnchor="middle">{formattedTime}</text>;
     }
     return null;
 }
