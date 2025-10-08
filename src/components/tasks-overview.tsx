@@ -93,8 +93,8 @@ export function TasksOverview({
     const chartData = useMemo(() => {
         setIsLoading(true);
         if (viewMode === "weekly") {
-        const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
-        const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
+        const weekStart = startOfWeek(selectedDate, { weekStartsOn: 6 });
+        const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 6 });
         const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
         return daysInWeek.map((day) => {
@@ -109,12 +109,12 @@ export function TasksOverview({
         
         if (viewMode === 'monthly') {
             const monthStart = startOfMonth(selectedDate);
-            const weeksInMonth = getWeeksInMonth(selectedDate, { weekStartsOn: 1 });
+            const weeksInMonth = getWeeksInMonth(selectedDate, { weekStartsOn: 6 });
 
             const weeklyData = Array.from({ length: weeksInMonth }, (_, i) => {
-                const weekStart = startOfWeek(addWeeks(monthStart, i), { weekStartsOn: 1 });
+                const weekStart = startOfWeek(addWeeks(monthStart, i), { weekStartsOn: 6 });
                 const tasksInWeek = tasks.filter(task => 
-                    isWithinInterval(task.dueDate, { start: weekStart, end: endOfWeek(weekStart, { weekStartsOn: 1 })}) &&
+                    isWithinInterval(task.dueDate, { start: weekStart, end: endOfWeek(weekStart, { weekStartsOn: 6 })}) &&
                     isSameMonth(task.dueDate, selectedDate)
                 );
                 const totalTime = tasksInWeek.reduce((acc, task) => acc + (task.timeSpent || 0), 0);
