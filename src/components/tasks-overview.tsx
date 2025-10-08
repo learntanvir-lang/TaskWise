@@ -59,7 +59,20 @@ const CustomizedLabel = (props: any) => {
     const { x, y, stroke, value } = props;
     const formattedTime = formatTimeForLabel(value);
     if (formattedTime) {
-        return <text x={x} y={y} dy={-10} fill={stroke} fontSize={12} textAnchor="middle">{formattedTime}</text>;
+        return (
+            <text 
+                x={x} 
+                y={y} 
+                dy={-12} 
+                fill={stroke} 
+                fontSize={14} 
+                fontWeight="bold"
+                textAnchor="middle"
+                style={{ paintOrder: "stroke", stroke: "hsl(var(--background) / 0.8)", strokeWidth: "4px", strokeLinejoin: "round" }}
+            >
+                {formattedTime}
+            </text>
+        );
     }
     return null;
 }
@@ -190,7 +203,7 @@ export function TasksOverview({
       </CardHeader>
       <CardContent className="pl-2">
         <ResponsiveContainer width="100%" height={350}>
-          <LineChart data={chartData} margin={{ top: 15, right: 10, left: -20, bottom: 5 }}>
+          <LineChart data={chartData} margin={{ top: 25, right: 10, left: -20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={borderColor} />
             <XAxis
               dataKey="name"
@@ -218,7 +231,7 @@ export function TasksOverview({
               activeDot={{ r: 8, fill: primaryColor }}
               dot={{ stroke: primaryColor, strokeWidth: 2, r: 4, fill: "hsl(var(--background))" }}
             >
-                <LabelList content={<CustomizedLabel />} />
+                <LabelList content={<CustomizedLabel />} dataKey="total" />
             </Line>
           </LineChart>
         </ResponsiveContainer>
