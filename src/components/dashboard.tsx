@@ -334,9 +334,19 @@ export function Dashboard({ user }: DashboardProps) {
   const showOverdue = selectedDate ? overdueTasks.length > 0 && (isSameDay(selectedDate, new Date()) || selectedDate > new Date()) : false;
 
   const completedTasksForSelectedDay = useMemo(() => tasksForSelectedDay.filter(t => t.isCompleted).length, [tasksForSelectedDay]);
+
   const totalTimeForSelectedDay = useMemo(() => {
-    return tasksForSelectedDay.reduce((acc, task) => acc + (task.timeSpent || 0), 0);
-  }, [tasksForSelectedDay]);
+    if (!selectedDate) return 0;
+    return tasks.reduce((total, task) => {
+      const timeOnDay = (task.timeEntries || []).reduce((entryTotal, entry) => {
+        if (isSameDay(entry.startTime, selectedDate)) {
+          return entryTotal + entry.duration;
+        }
+        return entryTotal;
+      }, 0);
+      return total + timeOnDay;
+    }, 0);
+  }, [tasks, selectedDate]);
 
   const taskDateModifiers = {
     taskDays: tasks.filter(t => !t.isCompleted).map(t => t.dueDate),

@@ -23,12 +23,14 @@ import {
   getWeeksInMonth,
   startOfMonth,
   addWeeks,
+  endOfMonth,
+  eachWeekOfInterval,
 } from "date-fns";
 import { toPng } from "html-to-image";
 import { Download, ListFilter } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { type Task } from "@/lib/types";
+import { type Task, type TimeEntry } from "@/lib/types";
 import { useTheme } from "next-themes";
 import { themes } from "@/themes";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -187,38 +189,49 @@ export function TasksOverview({
           ? tasks
           : tasks.filter((task) => selectedCategories.includes(task.category));
 
-        if (viewMode === "weekly") {
-        const weekStart = startOfWeek(selectedDate, { weekStartsOn: 6 });
-        const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 6 });
-        const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
+        const allTimeEntries = filteredTasks.flatMap(task => task.timeEntries || []);
 
-        return daysInWeek.map((day) => {
-            const tasksForDay = filteredTasks.filter((task) => isSameDay(task.dueDate, day));
-            const totalTime = tasksForDay.reduce((acc, task) => acc + (task.timeSpent || 0), 0);
-            return {
-                name: format(day, "EEE"),
-                total: totalTime,
-            };
-        });
+        if (viewMode === "weekly") {
+            const weekStart = startOfWeek(selectedDate, { weekStartsOn: 6 });
+            const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 6 });
+            const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+            return daysInWeek.map((day) => {
+                const totalTime = allTimeEntries.reduce((acc, entry) => {
+                    if (isSameDay(entry.startTime, day)) {
+                        return acc + entry.duration;
+                    }
+                    return acc;
+                }, 0);
+                return {
+                    name: format(day, "EEE"),
+                    total: totalTime,
+                };
+            });
         }
         
         if (viewMode === 'monthly') {
             const monthStart = startOfMonth(selectedDate);
-            const weeksInMonth = getWeeksInMonth(selectedDate, { weekStartsOn: 6 });
+            const monthEnd = endOfMonth(selectedDate);
+            const weeksInMonth = eachWeekOfInterval(
+                { start: monthStart, end: monthEnd }, 
+                { weekStartsOn: 6 }
+            );
 
-            const weeklyData = Array.from({ length: weeksInMonth }, (_, i) => {
-                const weekStart = startOfWeek(addWeeks(monthStart, i), { weekStartsOn: 6 });
-                const tasksInWeek = filteredTasks.filter(task => 
-                    isWithinInterval(task.dueDate, { start: weekStart, end: endOfWeek(weekStart, { weekStartsOn: 6 })}) &&
-                    isSameMonth(task.dueDate, selectedDate)
-                );
-                const totalTime = tasksInWeek.reduce((acc, task) => acc + (task.timeSpent || 0), 0);
+            return weeksInMonth.map((weekStart, i) => {
+                const weekEnd = endOfWeek(weekStart, { weekStartsOn: 6 });
+                const totalTime = allTimeEntries.reduce((acc, entry) => {
+                    if (isWithinInterval(entry.startTime, { start: weekStart, end: weekEnd })) {
+                        return acc + entry.duration;
+                    }
+                    return acc;
+                }, 0);
+
                 return {
                     name: `Week ${i + 1}`,
                     total: totalTime,
                 };
             });
-            return weeklyData;
         }
 
         return [];
