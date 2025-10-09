@@ -303,20 +303,19 @@ export function Dashboard({ user }: DashboardProps) {
     });
   };
 
-  const handleRescheduleTask = async (taskId: string, newDate: Date) => {
-    const taskDoc = doc(db, "tasks", taskId);
-    const dataToSave = { dueDate: Timestamp.fromDate(newDate) };
-    updateDoc(taskDoc, dataToSave)
-    .then(() => {
-        toast({ title: "Task Rescheduled", description: "The task has been moved to the selected date." });
-    }).catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: taskDoc.path,
-            operation: 'update',
-            requestResourceData: dataToSave,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-    });
+  const handleDuplicateTaskForToday = async (taskId: string, newDate: Date) => {
+    const originalTask = tasks.find(t => t.id === taskId);
+    if (!originalTask) return;
+
+    const { id, userId, isCompleted, timeSpent, timeEntries, ...taskData } = originalTask;
+    
+    const duplicatedTask = {
+      ...taskData,
+      dueDate: newDate,
+    };
+
+    await handleAddTask(duplicatedTask);
+    toast({ title: "Task Continued", description: `A new task "${duplicatedTask.title}" was created for today.` });
   };
 
   const tasksForSelectedDay = useMemo(() => {
@@ -453,7 +452,7 @@ export function Dashboard({ user }: DashboardProps) {
                   {showOverdue && (
                     <OverdueTasks
                       tasks={overdueTasks}
-                      onReschedule={handleRescheduleTask}
+                      onReschedule={handleDuplicateTaskForToday}
                       selectedDate={selectedDate!}
                     />
                   )}
