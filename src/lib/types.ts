@@ -18,6 +18,7 @@ export type Task = {
   isCompleted: boolean;
   timeSpent: number; // in seconds
   timeEntries?: TimeEntry[]; // Array of time entries
+  seriesId?: string; // To link continued tasks
 };
 
 export const categories: string[] = ["work", "personal", "shopping", "other"];

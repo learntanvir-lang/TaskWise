@@ -17,6 +17,7 @@ import {
   arrayUnion,
   arrayRemove,
   onSnapshot,
+  writeBatch,
 } from "firebase/firestore";
 import { nanoid } from "nanoid";
 
@@ -168,16 +169,30 @@ export function Dashboard({ user }: DashboardProps) {
   };
 
   const handleToggleComplete = async (id: string, isCompleted: boolean) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+
     const taskDoc = doc(db, "tasks", id);
-    updateDoc(taskDoc, { isCompleted })
-    .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: taskDoc.path,
-            operation: 'update',
-            requestResourceData: { isCompleted },
+
+    if (task.seriesId) {
+      const batch = writeBatch(db);
+      const tasksInSeries = tasks.filter(t => t.seriesId === task.seriesId);
+      tasksInSeries.forEach(t => {
+        const docRef = doc(db, "tasks", t.id);
+        batch.update(docRef, { isCompleted });
+      });
+      await batch.commit();
+    } else {
+       updateDoc(taskDoc, { isCompleted })
+        .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: taskDoc.path,
+                operation: 'update',
+                requestResourceData: { isCompleted },
+            });
+            errorEmitter.emit('permission-error', permissionError);
         });
-        errorEmitter.emit('permission-error', permissionError);
-    });
+    }
   };
 
   const handleDeleteTask = async (id: string) => {
@@ -307,15 +322,52 @@ export function Dashboard({ user }: DashboardProps) {
     const originalTask = tasks.find(t => t.id === taskId);
     if (!originalTask) return;
 
-    const { id, userId, isCompleted, timeSpent, timeEntries, ...taskData } = originalTask;
+    const { id, userId, isCompleted, timeSpent, timeEntries, seriesId, ...taskData } = originalTask;
     
-    const duplicatedTask = {
+    const newSeriesId = seriesId || nanoid();
+
+    // Create the new task for today
+    const duplicatedTaskData = {
       ...taskData,
       dueDate: newDate,
+      seriesId: newSeriesId,
+      isCompleted: false, // Always start as not completed
+      timeSpent: 0, // Reset time for the new task instance
+      timeEntries: [],
     };
+    
+    const tasksCollectionRef = collection(db, "tasks");
+    const dataToSave = {
+        ...duplicatedTaskData,
+        userId: user.uid,
+        dueDate: Timestamp.fromDate(duplicatedTaskData.dueDate),
+    };
+    
+    addDoc(tasksCollectionRef, dataToSave)
+    .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: tasksCollectionRef.path,
+          operation: 'create',
+          requestResourceData: dataToSave,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
 
-    await handleAddTask(duplicatedTask);
-    toast({ title: "Task Continued", description: `A new task "${duplicatedTask.title}" was created for today.` });
+    // If the original task didn't have a seriesId, update it
+    if (!seriesId) {
+        const originalTaskDoc = doc(db, "tasks", id);
+        updateDoc(originalTaskDoc, { seriesId: newSeriesId })
+        .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: originalTaskDoc.path,
+                operation: 'update',
+                requestResourceData: { seriesId: newSeriesId },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+    }
+
+    toast({ title: "Task Continued", description: `A new task "${taskData.title}" was created for today.` });
   };
 
   const tasksForSelectedDay = useMemo(() => {
