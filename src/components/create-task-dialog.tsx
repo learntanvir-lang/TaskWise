@@ -40,7 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { categories, priorities, type Task } from "@/lib/types";
+import { categories, type Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const taskSchema = z.object({
@@ -49,7 +49,7 @@ const taskSchema = z.object({
   dueDate: z.date({ required_error: "A due date is required." }),
   category: z.string({ required_error: "Category is required" }),
   customCategory: z.string().optional(),
-  priority: z.number({ required_error: "Priority is required" }),
+  priority: z.coerce.number().min(1, "Priority is required."),
 }).refine(data => {
     if (data.category === 'other' && !data.customCategory) {
         return false;
@@ -206,20 +206,9 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Priority</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(Number(value))} value={String(field.value)}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select priority" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {priorities.map((p) => (
-                          <SelectItem key={p.value} value={String(p.value)}>
-                            {p.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input type="number" placeholder="e.g., 1, 2, 3, 4" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
