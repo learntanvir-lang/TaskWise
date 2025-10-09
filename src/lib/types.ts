@@ -14,7 +14,7 @@ export type Task = {
   title: string;
   description?: string;
   dueDate: Date;
-  order: number;
+  priority: number;
   category: TaskCategory;
   isCompleted: boolean;
   timeSpent: number; // in seconds

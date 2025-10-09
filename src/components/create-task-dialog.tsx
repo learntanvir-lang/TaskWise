@@ -49,6 +49,7 @@ const taskSchema = z.object({
   dueDate: z.date({ required_error: "A due date is required." }),
   category: z.string({ required_error: "Category is required" }),
   customCategory: z.string().optional(),
+  priority: z.number({ required_error: "Priority is required" }),
 }).refine(data => {
     if (data.category === 'other' && !data.customCategory) {
         return false;
@@ -64,7 +65,7 @@ type TaskFormValues = z.infer<typeof taskSchema>;
 type CreateTaskDialogProps = {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  onTaskCreate: (task: Omit<Task, 'id' | 'isCompleted' | 'timeSpent' | 'userId' | 'order'>) => void;
+  onTaskCreate: (task: Omit<Task, 'id' | 'isCompleted' | 'timeSpent' | 'userId'>) => void;
   onTaskUpdate: (task: Task) => void;
   taskToEdit: Task | null;
 };
@@ -78,6 +79,7 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
       dueDate: new Date(),
       category: "personal",
       customCategory: "",
+      priority: 2,
     },
   });
     
@@ -98,6 +100,7 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
         dueDate: new Date(),
         category: "personal",
         customCategory: "",
+        priority: 2,
       });
     }
   }, [taskToEdit, isOpen, form]);
@@ -199,6 +202,31 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
               />
               <FormField
                 control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Priority</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(Number(value))} value={String(field.value)}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {[1, 2, 3, 4].map((p) => (
+                          <SelectItem key={p} value={String(p)}>
+                            Priority {p}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+             <FormField
+                control={form.control}
                 name="category"
                 render={({ field }) => (
                   <FormItem>
@@ -221,7 +249,6 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
                   </FormItem>
                 )}
               />
-            </div>
 
             {categoryValue === 'other' && (
                 <FormField

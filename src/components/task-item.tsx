@@ -15,7 +15,7 @@ import {
   Square,
   Trash2,
   Tag,
-  GripVertical
+  Flag,
 } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
 import type { Task } from "@/lib/types";
@@ -121,11 +121,17 @@ export function TaskItem({
 
   const totalTime = task.timeSpent + elapsedTime;
 
+  const priorityColors: Record<number, string> = {
+    1: "text-red-500",
+    2: "text-yellow-500",
+    3: "text-blue-500",
+    4: "text-green-500",
+  }
+
   return (
     <Card className={cn("transition-all", task.isCompleted && "bg-muted/50", isOverdue && "border-destructive/50 shadow-md shadow-destructive/20")}>
       <CardHeader className="flex flex-row items-start gap-4 space-y-0 p-4">
         <div className="flex items-center gap-2 pt-1">
-            <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
             <Checkbox
               id={`task-${task.id}`}
               checked={task.isCompleted}
@@ -183,6 +189,10 @@ export function TaskItem({
         )}>
           <CalendarIcon className="mr-1 h-3 w-3" />
           {isToday(task.dueDate) ? "Today" : format(task.dueDate, "MMM d")}
+        </Badge>
+        <Badge variant="outline" className="text-xs capitalize border-primary shadow-sm">
+            <Flag className={cn("mr-1 h-3 w-3", priorityColors[task.priority] || "text-foreground")} />
+            Priority {task.priority}
         </Badge>
         <Badge variant="secondary" className="capitalize border-primary shadow-sm">
           {getCategoryIcon(task.category)}

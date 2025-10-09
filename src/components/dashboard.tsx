@@ -17,7 +17,6 @@ import {
   arrayUnion,
   arrayRemove,
   onSnapshot,
-  writeBatch,
 } from "firebase/firestore";
 import { nanoid } from "nanoid";
 
@@ -49,15 +48,8 @@ import { TasksOverview } from "./tasks-overview";
 import { Skeleton } from "./ui/skeleton";
 import { OverdueTasks } from "./overdue-tasks";
 import { ModeToggle } from "./mode-toggle";
+import { TaskList } from './task-list';
 
-const TaskList = dynamic(() => import('./task-list').then(mod => mod.TaskList), {
-    ssr: false,
-    loading: () => <div className="space-y-3">
-        <Skeleton className="h-[125px] w-full" />
-        <Skeleton className="h-[125px] w-full" />
-        <Skeleton className="h-[125px] w-full" />
-    </div>
-});
 
 type DashboardProps = {
   user: User;
@@ -122,16 +114,14 @@ export function Dashboard({ user }: DashboardProps) {
   }, [user, timeLogTask?.id]);
 
 
-  const handleAddTask = async (newTaskData: Omit<Task, 'id' | 'isCompleted' | 'timeSpent' | 'userId' | 'order'>) => {
+  const handleAddTask = async (newTaskData: Omit<Task, 'id' | 'isCompleted' | 'timeSpent' | 'userId'>) => {
     const tasksCollectionRef = collection(db, "tasks");
-    const maxOrder = tasks.reduce((max, task) => Math.max(max, task.order || 0), 0);
     const dataToSave = {
         ...newTaskData,
         userId: user.uid,
         isCompleted: false,
         timeSpent: 0,
         timeEntries: [],
-        order: maxOrder + 1,
         dueDate: Timestamp.fromDate(newTaskData.dueDate),
     };
     addDoc(tasksCollectionRef, dataToSave)
@@ -207,39 +197,6 @@ export function Dashboard({ user }: DashboardProps) {
     });
   };
   
-  const handleUpdateTaskOrder = async (reorderedTasks: Task[]) => {
-    setTasks(prevTasks => {
-        const newTasks = [...prevTasks];
-        const reorderedIds = new Set(reorderedTasks.map(t => t.id));
-        const unchangedTasks = newTasks.filter(t => !reorderedIds.has(t.id));
-        const updatedTasks = [...reorderedTasks, ...unchangedTasks].sort((a, b) => {
-            if (selectedDate && isSameDay(a.dueDate, selectedDate) && isSameDay(b.dueDate, selectedDate)) {
-                const aIndex = reorderedTasks.findIndex(t => t.id === a.id);
-                const bIndex = reorderedTasks.findIndex(t => t.id === b.id);
-                if (aIndex > -1 && bIndex > -1) return aIndex - bIndex;
-            }
-            return (a.order || 0) - (b.order || 0);
-        });
-        
-        return updatedTasks;
-    });
-
-    const batch = writeBatch(db);
-    reorderedTasks.forEach((task, index) => {
-        const taskRef = doc(db, "tasks", task.id);
-        batch.update(taskRef, { order: index });
-    });
-    
-    await batch.commit().catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: "tasks/",
-            operation: 'update',
-            requestResourceData: { order: "..." },
-        });
-        errorEmitter.emit('permission-error', permissionError);
-    });
-  };
-
   const handleEditTask = (task: Task) => {
     setTaskToEdit(task);
     setCreateTaskDialogOpen(true);
@@ -366,7 +323,7 @@ export function Dashboard({ user }: DashboardProps) {
     if (!selectedDate) return [];
     return tasks
       .filter((task) => isSameDay(task.dueDate, selectedDate))
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
+      .sort((a, b) => a.priority - b.priority);
   }, [tasks, selectedDate]);
 
   const overdueTasks = useMemo(() => {
@@ -499,7 +456,6 @@ export function Dashboard({ user }: DashboardProps) {
                     setActiveTimer={setActiveTimer}
                     updateTaskTime={updateTaskTime}
                     onTimeLogClick={setTimeLogTask}
-                    onTaskOrderChange={handleUpdateTaskOrder}
                   />
                 </>
                 ) : (
