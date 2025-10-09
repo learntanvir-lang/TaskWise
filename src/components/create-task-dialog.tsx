@@ -90,6 +90,7 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
       const isCustom = !categories.includes(taskToEdit.category);
       form.reset({
         ...taskToEdit,
+        description: taskToEdit.description || "",
         category: isCustom ? "other" : taskToEdit.category,
         customCategory: isCustom ? taskToEdit.category : "",
       });
