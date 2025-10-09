@@ -18,7 +18,8 @@ import {
   Flag,
 } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
-import type { Task } from "@/lib/types";
+import type { Task, TaskPriority } from "@/lib/types";
+import { priorities } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -121,6 +122,8 @@ export function TaskItem({
 
   const totalTime = task.timeSpent + elapsedTime;
 
+  const priorityConfig = priorities.find(p => p.value === task.priority);
+
   const priorityColors: Record<number, string> = {
     1: "text-red-500",
     2: "text-yellow-500",
@@ -190,10 +193,10 @@ export function TaskItem({
           <CalendarIcon className="mr-1 h-3 w-3" />
           {isToday(task.dueDate) ? "Today" : format(task.dueDate, "MMM d")}
         </Badge>
-        <Badge variant="outline" className="text-xs capitalize border-primary shadow-sm">
+        {priorityConfig && <Badge variant="outline" className="text-xs capitalize border-primary shadow-sm">
             <Flag className={cn("mr-1 h-3 w-3", priorityColors[task.priority] || "text-foreground")} />
-            Priority {task.priority}
-        </Badge>
+            {priorityConfig.label}
+        </Badge>}
         <Badge variant="secondary" className="capitalize border-primary shadow-sm">
           {getCategoryIcon(task.category)}
           <span className="ml-1">{task.category}</span>

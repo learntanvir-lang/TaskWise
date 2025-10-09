@@ -40,7 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { categories, type Task } from "@/lib/types";
+import { categories, priorities, type Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const taskSchema = z.object({
@@ -213,9 +213,9 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {[1, 2, 3, 4].map((p) => (
-                          <SelectItem key={p} value={String(p)}>
-                            Priority {p}
+                        {priorities.map((p) => (
+                          <SelectItem key={p.value} value={String(p.value)}>
+                            {p.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -266,7 +266,7 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
                 />
             )}
             
-            <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+            <DialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0 sm:space-x-2">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} className="w-full sm:w-auto">Cancel</Button>
               <Button type="submit" className="w-full sm:w-auto">{taskToEdit ? 'Save Changes' : 'Create Task'}</Button>
             </DialogFooter>
