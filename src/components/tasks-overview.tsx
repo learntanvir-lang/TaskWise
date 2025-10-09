@@ -25,7 +25,7 @@ import {
   addWeeks,
 } from "date-fns";
 import { toPng } from "html-to-image";
-import { Download } from "lucide-react";
+import { Download, ListFilter } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type Task } from "@/lib/types";
@@ -33,6 +33,14 @@ import { useTheme } from "next-themes";
 import { themes } from "@/themes";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "./ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type TasksOverviewProps = {
   tasks: Task[];
@@ -122,12 +130,34 @@ export function TasksOverview({
 }: TasksOverviewProps) {
     const { resolvedTheme } = useTheme();
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedCategories, setSelectedCategories] = useState<string[]>(["All"]);
     const chartRef = useRef<HTMLDivElement>(null);
     const theme = themes.find((t) => t.name === 'light');
     const colors = resolvedTheme === 'dark' ? theme?.cssVars.dark : theme?.cssVars.light;
     const primaryColor = `hsl(${colors?.primary})`;
     const borderColor = `hsl(${colors?.border})`;
     const mutedForegroundColor = `hsl(${colors?.["muted-foreground"]})`;
+
+    const allCategories = useMemo(() => {
+      const categories = new Set(tasks.map((t) => t.category));
+      return ["All", ...Array.from(categories)];
+    }, [tasks]);
+
+    const handleCategoryChange = (category: string) => {
+      setSelectedCategories((prev) => {
+        if (category === "All") {
+          return prev.includes("All") ? prev.filter(c => c !== "All") : ["All"];
+        }
+    
+        const newSelection = prev.filter((c) => c !== "All");
+        if (newSelection.includes(category)) {
+            const filtered = newSelection.filter((c) => c !== category);
+            return filtered.length === 0 ? ["All"] : filtered;
+        } else {
+            return [...newSelection, category];
+        }
+      });
+    };
 
     const handleDownload = useCallback(() => {
         if (chartRef.current === null) {
@@ -152,13 +182,18 @@ export function TasksOverview({
   
     const chartData = useMemo(() => {
         setIsLoading(true);
+
+        const filteredTasks = selectedCategories.includes("All")
+          ? tasks
+          : tasks.filter((task) => selectedCategories.includes(task.category));
+
         if (viewMode === "weekly") {
         const weekStart = startOfWeek(selectedDate, { weekStartsOn: 6 });
         const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 6 });
         const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
         return daysInWeek.map((day) => {
-            const tasksForDay = tasks.filter((task) => isSameDay(task.dueDate, day));
+            const tasksForDay = filteredTasks.filter((task) => isSameDay(task.dueDate, day));
             const totalTime = tasksForDay.reduce((acc, task) => acc + (task.timeSpent || 0), 0);
             return {
                 name: format(day, "EEE"),
@@ -173,7 +208,7 @@ export function TasksOverview({
 
             const weeklyData = Array.from({ length: weeksInMonth }, (_, i) => {
                 const weekStart = startOfWeek(addWeeks(monthStart, i), { weekStartsOn: 6 });
-                const tasksInWeek = tasks.filter(task => 
+                const tasksInWeek = filteredTasks.filter(task => 
                     isWithinInterval(task.dueDate, { start: weekStart, end: endOfWeek(weekStart, { weekStartsOn: 6 })}) &&
                     isSameMonth(task.dueDate, selectedDate)
                 );
@@ -187,7 +222,7 @@ export function TasksOverview({
         }
 
         return [];
-    }, [tasks, viewMode, selectedDate]);
+    }, [tasks, viewMode, selectedDate, selectedCategories]);
     
     useEffect(() => {
         // Simulate a small delay to allow for render, then show the chart
@@ -226,10 +261,34 @@ export function TasksOverview({
                 </span>
                 <span className="text-lg font-bold text-primary">{formatTotalTime(totalTime)}</span>
             </div>
-          <Button onClick={handleDownload} variant="outline" size="sm">
-            <Download className="mr-2 h-4 w-4" />
-            Download
-          </Button>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                        <ListFilter className="mr-2 h-4 w-4" />
+                        Filter
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Filter by Category</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {allCategories.map(category => (
+                        <DropdownMenuCheckboxItem
+                            key={category}
+                            checked={selectedCategories.includes(category)}
+                            onSelect={(e) => e.preventDefault()}
+                            onCheckedChange={() => handleCategoryChange(category)}
+                        >
+                            {category}
+                        </DropdownMenuCheckboxItem>
+                    ))}
+                </DropdownMenuContent>
+            </DropdownMenu>
+            <Button onClick={handleDownload} variant="outline" size="sm">
+                <Download className="mr-2 h-4 w-4" />
+                Download
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="pl-2">
