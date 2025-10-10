@@ -309,7 +309,7 @@ export function TasksOverview({
       <CardContent className="pl-2">
         <div ref={chartRef}>
             <ResponsiveContainer width="100%" height={350}>
-            <LineChart data={chartData} margin={{ top: 25, right: 10, left: -20, bottom: 5 }}>
+            <LineChart data={chartData} margin={{ top: 25, right: 30, left: -20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={borderColor} />
                 <XAxis
                 dataKey="name"
