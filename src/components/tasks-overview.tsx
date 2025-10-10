@@ -169,7 +169,6 @@ export function TasksOverview({
         toPng(chartRef.current, { 
             cacheBust: true, 
             backgroundColor: resolvedTheme === 'dark' ? '#0f172a' : '#f8fafc',
-            skipFonts: true
         })
             .then((dataUrl) => {
                 const link = document.createElement('a');
