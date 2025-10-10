@@ -165,10 +165,13 @@ export function TasksOverview({
         if (chartRef.current === null) {
             return;
         }
+        
+        const fontEmbedCSS = `@import url('https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap');`;
 
         toPng(chartRef.current, { 
             cacheBust: true, 
             backgroundColor: resolvedTheme === 'dark' ? '#0f172a' : '#f8fafc',
+            fontEmbedCSS: fontEmbedCSS,
         })
             .then((dataUrl) => {
                 const link = document.createElement('a');
