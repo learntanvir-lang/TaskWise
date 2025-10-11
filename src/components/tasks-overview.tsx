@@ -339,6 +339,26 @@ export function TasksOverview({
         }
         return '';
     }, [viewMode, selectedDate]);
+
+    const categoryButtonLabel = useMemo(() => {
+        if (selectedCategories.includes("All") || selectedCategories.length === 0) {
+            return "Category";
+        }
+        if (selectedCategories.length === 1) {
+            return selectedCategories[0];
+        }
+        return `${selectedCategories.length} categories`;
+    }, [selectedCategories]);
+
+    const subCategoryButtonLabel = useMemo(() => {
+        if (selectedSubCategories.includes("All") || selectedSubCategories.length === 0) {
+            return "Sub-category";
+        }
+        if (selectedSubCategories.length === 1) {
+            return selectedSubCategories[0];
+        }
+        return `${selectedSubCategories.length} sub-categories`;
+    }, [selectedSubCategories]);
     
     if (isLoading || !resolvedTheme) {
         return (
@@ -363,9 +383,9 @@ export function TasksOverview({
           <div className="flex items-center gap-2" data-exclude-from-download="true">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="capitalize">
                         <ListFilter className="mr-2 h-4 w-4" />
-                        Category
+                        {categoryButtonLabel}
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -377,6 +397,7 @@ export function TasksOverview({
                             checked={selectedCategories.includes(category)}
                             onSelect={(e) => e.preventDefault()}
                             onCheckedChange={() => handleCategoryChange(category)}
+                            className="capitalize"
                         >
                             {category}
                         </DropdownMenuCheckboxItem>
@@ -387,9 +408,9 @@ export function TasksOverview({
             {availableSubCategories.length > 0 && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="capitalize">
                             <ListFilter className="mr-2 h-4 w-4" />
-                            Sub-category
+                            {subCategoryButtonLabel}
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -401,6 +422,7 @@ export function TasksOverview({
                                 checked={selectedSubCategories.includes(subCategory)}
                                 onSelect={(e) => e.preventDefault()}
                                 onCheckedChange={() => handleSubCategoryChange(subCategory)}
+                                className="capitalize"
                             >
                                 {subCategory}
                             </DropdownMenuCheckboxItem>
