@@ -319,6 +319,20 @@ export function TasksOverview({
         }
         return `${title} Time Summary`;
     }, [viewMode, selectedCategories, selectedSubCategories]);
+
+    const chartDateRangeLabel = useMemo(() => {
+        if (viewMode === 'weekly') {
+            const weekStart = startOfWeek(selectedDate, { weekStartsOn: 6 });
+            const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 6 });
+            return `${format(weekStart, 'd MMM, yyyy')} - ${format(weekEnd, 'd MMM, yyyy')}`;
+        }
+        if (viewMode === 'monthly') {
+            const monthStart = startOfMonth(selectedDate);
+            const monthEnd = endOfMonth(selectedDate);
+            return `${format(monthStart, 'd MMM, yyyy')} - ${format(monthEnd, 'd MMM, yyyy')}`;
+        }
+        return '';
+    }, [viewMode, selectedDate]);
     
     if (isLoading || !resolvedTheme) {
         return (
@@ -333,12 +347,13 @@ export function TasksOverview({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex justify-between items-center">
+        <CardTitle className="flex justify-between items-start">
             <div className="flex flex-col gap-1">
                 <span className="capitalize">
                     {chartTitle}
                 </span>
-                <span className="text-lg font-bold text-primary">{formatTotalTime(totalTime)}</span>
+                <span className="text-xs font-normal text-muted-foreground">{chartDateRangeLabel}</span>
+                <span className="text-lg font-bold text-primary pt-1">{formatTotalTime(totalTime)}</span>
             </div>
           <div className="flex items-center gap-2">
             <DropdownMenu>
