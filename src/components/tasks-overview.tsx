@@ -310,20 +310,20 @@ export function TasksOverview({
     };
 
     const chartTitle = useMemo(() => {
-        const title = viewMode === "weekly" ? "Weekly" : "Monthly";
-        const categories = selectedCategories.includes("All") || selectedCategories.length === 0 ? "" : selectedCategories.join(" & ");
-        const subCategories = selectedSubCategories.includes("All") || selectedSubCategories.length === 0 ? "" : selectedSubCategories.join(" & ");
-
-        if (categories && subCategories) {
-            return `${title} Time for ${categories} (${subCategories})`;
+        const titlePrefix = viewMode === "weekly" ? "Weekly" : "Monthly";
+        const categoriesString = selectedCategories.includes("All") || selectedCategories.length === 0 ? "" : selectedCategories.join(" & ");
+        const subCategoriesString = selectedSubCategories.includes("All") || selectedSubCategories.length === 0 ? "" : selectedSubCategories.join(" & ");
+    
+        if (categoriesString && subCategoriesString) {
+            return `${titlePrefix} Time for ${categoriesString} (${subCategoriesString})`;
         }
-        if (categories) {
-            return `${title} Time for ${categories}`;
+        if (categoriesString) {
+            return `${titlePrefix} Time for ${categoriesString}`;
         }
-        if (subCategories) {
-            return `${title} Time for ${subCategories}`;
+        if (subCategoriesString) {
+            return `${titlePrefix} Time for ${subCategoriesString}`;
         }
-        return `${title} Time Summary`;
+        return `${titlePrefix} Time Summary`;
     }, [viewMode, selectedCategories, selectedSubCategories]);
 
     const chartDateRangeLabel = useMemo(() => {
@@ -376,7 +376,7 @@ export function TasksOverview({
   return (
     <Card ref={cardRef}>
       <CardHeader>
-        <CardTitle className="flex justify-between items-center">
+        <CardTitle className="flex justify-between items-center gap-4">
             <div className="flex flex-col gap-1">
                 <span className="capitalize">
                     {chartTitle}
@@ -386,7 +386,7 @@ export function TasksOverview({
           <div className="flex items-center gap-2" data-exclude-from-download="true">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant={isCategoryFilterActive ? "secondary" : "outline"} size="sm" className="capitalize">
+                    <Button variant={isCategoryFilterActive ? "accent" : "outline"} size="sm" className="capitalize">
                         <ListFilter className="mr-2 h-4 w-4" />
                         {categoryButtonLabel}
                     </Button>
@@ -411,7 +411,7 @@ export function TasksOverview({
             {availableSubCategories.length > 0 && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant={isSubCategoryFilterActive ? "secondary" : "outline"} size="sm" className="capitalize">
+                        <Button variant={isSubCategoryFilterActive ? "accent" : "outline"} size="sm" className="capitalize">
                             <ListFilter className="mr-2 h-4 w-4" />
                             {subCategoryButtonLabel}
                         </Button>
