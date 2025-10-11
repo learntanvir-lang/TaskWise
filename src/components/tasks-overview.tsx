@@ -353,7 +353,7 @@ export function TasksOverview({
   return (
     <Card ref={cardRef}>
       <CardHeader>
-        <CardTitle className="flex justify-between items-start">
+        <CardTitle className="flex justify-between items-center">
             <div className="flex flex-col gap-1">
                 <span className="capitalize">
                     {chartTitle}
