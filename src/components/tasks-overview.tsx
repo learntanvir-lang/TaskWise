@@ -308,14 +308,17 @@ export function TasksOverview({
 
     const chartTitle = useMemo(() => {
         const title = viewMode === "weekly" ? "Weekly" : "Monthly";
-        const categories = selectedCategories.includes("All") ? "" : selectedCategories.join(" & ");
-        const subCategories = selectedSubCategories.includes("All") ? "" : selectedSubCategories.join(" & ");
+        const categories = selectedCategories.includes("All") || selectedCategories.length === 0 ? "" : selectedCategories.join(" & ");
+        const subCategories = selectedSubCategories.includes("All") || selectedSubCategories.length === 0 ? "" : selectedSubCategories.join(" & ");
 
         if (categories && subCategories) {
             return `${title} Time for ${categories} (${subCategories})`;
         }
         if (categories) {
             return `${title} Time for ${categories}`;
+        }
+        if (subCategories) {
+            return `${title} Time for ${subCategories}`;
         }
         return `${title} Time Summary`;
     }, [viewMode, selectedCategories, selectedSubCategories]);
@@ -447,7 +450,7 @@ export function TasksOverview({
             </ResponsiveContainer>
         </div>
       </CardContent>
-      <div className="text-center text-sm font-bold text-primary p-4">
+      <div className="text-center text-lg font-bold text-primary px-4 pt-0 pb-4">
         {chartDateRangeLabel}
       </div>
     </Card>
