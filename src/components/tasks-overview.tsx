@@ -370,6 +370,9 @@ export function TasksOverview({
         )
     }
 
+    const isCategoryFilterActive = !selectedCategories.includes("All") && selectedCategories.length > 0;
+    const isSubCategoryFilterActive = !selectedSubCategories.includes("All") && selectedSubCategories.length > 0;
+
   return (
     <Card ref={cardRef}>
       <CardHeader>
@@ -383,7 +386,7 @@ export function TasksOverview({
           <div className="flex items-center gap-2" data-exclude-from-download="true">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="capitalize">
+                    <Button variant={isCategoryFilterActive ? "secondary" : "outline"} size="sm" className="capitalize">
                         <ListFilter className="mr-2 h-4 w-4" />
                         {categoryButtonLabel}
                     </Button>
@@ -408,7 +411,7 @@ export function TasksOverview({
             {availableSubCategories.length > 0 && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="capitalize">
+                        <Button variant={isSubCategoryFilterActive ? "secondary" : "outline"} size="sm" className="capitalize">
                             <ListFilter className="mr-2 h-4 w-4" />
                             {subCategoryButtonLabel}
                         </Button>
