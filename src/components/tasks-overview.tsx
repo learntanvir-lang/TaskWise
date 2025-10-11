@@ -313,16 +313,21 @@ export function TasksOverview({
         const titlePrefix = viewMode === "weekly" ? "Weekly" : "Monthly";
         const categoriesString = selectedCategories.includes("All") || selectedCategories.length === 0 ? "" : selectedCategories.join(" & ");
         const subCategoriesString = selectedSubCategories.includes("All") || selectedSubCategories.length === 0 ? "" : selectedSubCategories.join(" & ");
-    
-        if (categoriesString && subCategoriesString) {
-            return `${titlePrefix} Time for ${categoriesString} (${subCategoriesString})`;
-        }
+
+        let filterString = "";
         if (categoriesString) {
-            return `${titlePrefix} Time for ${categoriesString}`;
+            filterString += ` for - ${categoriesString}`;
+            if (subCategoriesString) {
+                filterString += ` (${subCategoriesString})`;
+            }
+        } else if (subCategoriesString) {
+            filterString += ` for - ${subCategoriesString}`;
         }
-        if (subCategoriesString) {
-            return `${titlePrefix} Time for ${subCategoriesString}`;
+
+        if (filterString) {
+            return `${titlePrefix} Time${filterString}`;
         }
+        
         return `${titlePrefix} Time Summary`;
     }, [viewMode, selectedCategories, selectedSubCategories]);
 
