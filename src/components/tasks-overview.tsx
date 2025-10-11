@@ -174,7 +174,7 @@ export function TasksOverview({
     const handleCategoryChange = (category: string) => {
       setSelectedCategories((prev) => {
         if (category === "All") {
-          return prev.includes("All") ? prev.filter(c => c !== "All") : ["All"];
+          return prev.length === 1 && prev[0] === "All" ? [] : ["All"];
         }
     
         const newSelection = prev.filter((c) => c !== "All");
@@ -190,7 +190,7 @@ export function TasksOverview({
     const handleSubCategoryChange = (subCategory: string) => {
         setSelectedSubCategories((prev) => {
             if (subCategory === "All") {
-              return prev.includes("All") ? prev.filter(sc => sc !== "All") : ["All"];
+                return prev.length === 1 && prev[0] === "All" ? [] : ["All"];
             }
         
             const newSelection = prev.filter((sc) => sc !== "All");
@@ -236,10 +236,12 @@ export function TasksOverview({
         const subCategoryFilteredTasks = selectedSubCategories.includes("All")
           ? categoryFilteredTasks
           : categoryFilteredTasks.filter((task) => 
-                !task.subcategory || selectedSubCategories.includes(task.subcategory)
+                task.subcategory && selectedSubCategories.includes(task.subcategory)
             );
 
-        const allTimeEntries = subCategoryFilteredTasks.flatMap(task => task.timeEntries || []);
+        const finalFilteredTasks = selectedSubCategories.includes("All") ? categoryFilteredTasks : subCategoryFilteredTasks;
+
+        const allTimeEntries = finalFilteredTasks.flatMap(task => task.timeEntries || []);
 
         if (viewMode === "weekly") {
             const weekStart = startOfWeek(selectedDate, { weekStartsOn: 6 });
@@ -303,6 +305,20 @@ export function TasksOverview({
         const minutes = Math.floor((seconds % 3600) / 60);
         return `${hours}h ${minutes}m`;
     };
+
+    const chartTitle = useMemo(() => {
+        const title = viewMode === "weekly" ? "Weekly" : "Monthly";
+        const categories = selectedCategories.includes("All") ? "" : selectedCategories.join(" & ");
+        const subCategories = selectedSubCategories.includes("All") ? "" : selectedSubCategories.join(" & ");
+
+        if (categories && subCategories) {
+            return `${title} Time for ${categories} (${subCategories})`;
+        }
+        if (categories) {
+            return `${title} Time for ${categories}`;
+        }
+        return `${title} Time Summary`;
+    }, [viewMode, selectedCategories, selectedSubCategories]);
     
     if (isLoading || !resolvedTheme) {
         return (
@@ -319,8 +335,8 @@ export function TasksOverview({
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
             <div className="flex flex-col gap-1">
-                <span>
-                    {viewMode === "weekly" ? "Weekly" : "Monthly"} Time Summary
+                <span className="capitalize">
+                    {chartTitle}
                 </span>
                 <span className="text-lg font-bold text-primary">{formatTotalTime(totalTime)}</span>
             </div>
