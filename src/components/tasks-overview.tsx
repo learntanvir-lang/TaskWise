@@ -352,7 +352,6 @@ export function TasksOverview({
                 <span className="capitalize">
                     {chartTitle}
                 </span>
-                <span className="text-xs font-normal text-muted-foreground">{chartDateRangeLabel}</span>
                 <span className="text-lg font-bold text-primary pt-1">{formatTotalTime(totalTime)}</span>
             </div>
           <div className="flex items-center gap-2">
@@ -448,6 +447,9 @@ export function TasksOverview({
             </ResponsiveContainer>
         </div>
       </CardContent>
+      <div className="text-center text-sm font-bold text-primary p-4">
+        {chartDateRangeLabel}
+      </div>
     </Card>
   );
 }
