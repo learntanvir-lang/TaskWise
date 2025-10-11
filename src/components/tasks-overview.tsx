@@ -381,12 +381,12 @@ export function TasksOverview({
   return (
     <Card ref={cardRef}>
       <CardHeader>
-        <CardTitle className="flex justify-between items-center gap-4">
-            <div className="flex flex-col gap-1">
-                <span className="capitalize">
+        <CardTitle className="flex justify-between items-start gap-4">
+            <div className="flex-1">
+                <span className="capitalize text-xl">
                     {chartTitle}
                 </span>
-                <span className="text-lg font-bold text-primary pt-1">{formatTotalTime(totalTime)}</span>
+                <p className="text-lg font-bold text-primary pt-1">{formatTotalTime(totalTime)}</p>
             </div>
           <div className="flex items-center gap-2" data-exclude-from-download="true">
             <DropdownMenu>
