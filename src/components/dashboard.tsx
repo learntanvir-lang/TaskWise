@@ -422,10 +422,6 @@ export function Dashboard({ user }: DashboardProps) {
             Hello, {user?.displayName || "User"}!
             <Sparkles className="h-5 w-5" />
           </span>
-           <Button onClick={handleAddNewTaskClick} size="sm" className="w-full sm:w-auto">
-            <Plus className="-ml-1 md:mr-2 h-4 w-4" />
-            <span className="hidden md:inline">Add Task</span>
-          </Button>
           <ModeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -485,18 +481,28 @@ export function Dashboard({ user }: DashboardProps) {
 
             <section className="min-w-0">
               <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
-                  <h2 className="text-2xl font-bold leading-tight">
-                  {viewMode === 'daily' && (selectedDate ? format(selectedDate, "PPP") : 'Tasks')}
-                  {viewMode === 'weekly' && 'Weekly Overview'}
-                  {viewMode === 'monthly' && 'Monthly Overview'}
-                  </h2>
-                  <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="self-start sm:self-center">
-                      <TabsList>
-                          <TabsTrigger value="daily">Daily</TabsTrigger>
-                          <TabsTrigger value="weekly">Weekly</TabsTrigger>
-                          <TabsTrigger value="monthly">Monthly</TabsTrigger>
-                      </TabsList>
-                  </Tabs>
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold leading-tight">
+                    {viewMode === 'daily' && (selectedDate ? format(selectedDate, "PPP") : 'Tasks')}
+                    {viewMode === 'weekly' && 'Weekly Overview'}
+                    {viewMode === 'monthly' && 'Monthly Overview'}
+                    </h2>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {viewMode === 'daily' && (
+                        <Button onClick={handleAddNewTaskClick} size="sm">
+                            <Plus className="-ml-1 md:mr-2 h-4 w-4" />
+                            <span className="hidden md:inline">Add Task</span>
+                        </Button>
+                    )}
+                    <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="self-start sm:self-center">
+                        <TabsList>
+                            <TabsTrigger value="daily">Daily</TabsTrigger>
+                            <TabsTrigger value="weekly">Weekly</TabsTrigger>
+                            <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                  </div>
               </div>
               <div className="h-full space-y-4">
               {viewMode === 'daily' ? (
