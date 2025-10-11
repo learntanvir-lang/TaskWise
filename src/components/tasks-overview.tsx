@@ -138,7 +138,7 @@ export function TasksOverview({
     const [selectedCategories, setSelectedCategories] = useState<string[]>(["All"]);
     const [selectedSubCategories, setSelectedSubCategories] = useState<string[]>(["All"]);
 
-    const chartRef = useRef<HTMLDivElement>(null);
+    const cardRef = useRef<HTMLDivElement>(null);
     const theme = themes.find((t) => t.name === 'light');
     const colors = resolvedTheme === 'dark' ? theme?.cssVars.dark : theme?.cssVars.light;
     const primaryColor = `hsl(${colors?.primary})`;
@@ -204,16 +204,19 @@ export function TasksOverview({
     };
 
     const handleDownload = useCallback(() => {
-        if (chartRef.current === null) {
+        if (cardRef.current === null) {
             return;
         }
         
         const fontEmbedCSS = `@import url('https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap');`;
 
-        toPng(chartRef.current, { 
+        toPng(cardRef.current, { 
             cacheBust: true, 
             backgroundColor: resolvedTheme === 'dark' ? '#0f172a' : '#f8fafc',
             fontEmbedCSS: fontEmbedCSS,
+            filter: (node: HTMLElement) => {
+                return node.dataset?.excludeFromDownload !== 'true';
+            },
         })
             .then((dataUrl) => {
                 const link = document.createElement('a');
@@ -224,7 +227,7 @@ export function TasksOverview({
             .catch((err) => {
                 console.error('oops, something went wrong!', err);
             });
-    }, [chartRef, viewMode, selectedDate, resolvedTheme]);
+    }, [cardRef, viewMode, selectedDate, resolvedTheme]);
   
     const chartData = useMemo(() => {
         setIsLoading(true);
@@ -348,7 +351,7 @@ export function TasksOverview({
     }
 
   return (
-    <Card>
+    <Card ref={cardRef}>
       <CardHeader>
         <CardTitle className="flex justify-between items-start">
             <div className="flex flex-col gap-1">
@@ -357,7 +360,7 @@ export function TasksOverview({
                 </span>
                 <span className="text-lg font-bold text-primary pt-1">{formatTotalTime(totalTime)}</span>
             </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" data-exclude-from-download="true">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm">
@@ -414,7 +417,7 @@ export function TasksOverview({
         </CardTitle>
       </CardHeader>
       <CardContent className="pl-2">
-        <div ref={chartRef}>
+        <div>
             <ResponsiveContainer width="100%" height={350}>
             <LineChart data={chartData} margin={{ top: 25, right: 30, left: -20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={borderColor} />
