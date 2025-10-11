@@ -118,7 +118,10 @@ const ChartLoader = () => (
     <div className="space-y-4">
         <div className="flex justify-between items-center">
             <Skeleton className="h-6 w-1/3" />
-            <Skeleton className="h-8 w-20" />
+            <div className="flex gap-2">
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-8 w-20" />
+            </div>
         </div>
         <Skeleton className="h-[350px] w-full" />
     </div>
@@ -133,6 +136,8 @@ export function TasksOverview({
     const { resolvedTheme } = useTheme();
     const [isLoading, setIsLoading] = useState(true);
     const [selectedCategories, setSelectedCategories] = useState<string[]>(["All"]);
+    const [selectedSubCategories, setSelectedSubCategories] = useState<string[]>(["All"]);
+
     const chartRef = useRef<HTMLDivElement>(null);
     const theme = themes.find((t) => t.name === 'light');
     const colors = resolvedTheme === 'dark' ? theme?.cssVars.dark : theme?.cssVars.light;
@@ -144,6 +149,27 @@ export function TasksOverview({
       const categories = new Set(tasks.map((t) => t.category));
       return ["All", ...Array.from(categories)];
     }, [tasks]);
+
+    const availableSubCategories = useMemo(() => {
+        const subCategories = new Set<string>();
+        const filteredTasks = selectedCategories.includes("All")
+          ? tasks
+          : tasks.filter((task) => selectedCategories.includes(task.category));
+        
+        filteredTasks.forEach(task => {
+            if (task.subcategory) {
+                subCategories.add(task.subcategory);
+            }
+        });
+
+        if (subCategories.size === 0) return [];
+        return ["All", ...Array.from(subCategories)];
+    }, [tasks, selectedCategories]);
+
+    useEffect(() => {
+        // Reset sub-category filter when available sub-categories change
+        setSelectedSubCategories(["All"]);
+    }, [availableSubCategories]);
 
     const handleCategoryChange = (category: string) => {
       setSelectedCategories((prev) => {
@@ -159,6 +185,22 @@ export function TasksOverview({
             return [...newSelection, category];
         }
       });
+    };
+
+    const handleSubCategoryChange = (subCategory: string) => {
+        setSelectedSubCategories((prev) => {
+            if (subCategory === "All") {
+              return prev.includes("All") ? prev.filter(sc => sc !== "All") : ["All"];
+            }
+        
+            const newSelection = prev.filter((sc) => sc !== "All");
+            if (newSelection.includes(subCategory)) {
+                const filtered = newSelection.filter((sc) => sc !== subCategory);
+                return filtered.length === 0 ? ["All"] : filtered;
+            } else {
+                return [...newSelection, subCategory];
+            }
+          });
     };
 
     const handleDownload = useCallback(() => {
@@ -187,11 +229,17 @@ export function TasksOverview({
     const chartData = useMemo(() => {
         setIsLoading(true);
 
-        const filteredTasks = selectedCategories.includes("All")
+        const categoryFilteredTasks = selectedCategories.includes("All")
           ? tasks
           : tasks.filter((task) => selectedCategories.includes(task.category));
 
-        const allTimeEntries = filteredTasks.flatMap(task => task.timeEntries || []);
+        const subCategoryFilteredTasks = selectedSubCategories.includes("All")
+          ? categoryFilteredTasks
+          : categoryFilteredTasks.filter((task) => 
+                !task.subcategory || selectedSubCategories.includes(task.subcategory)
+            );
+
+        const allTimeEntries = subCategoryFilteredTasks.flatMap(task => task.timeEntries || []);
 
         if (viewMode === "weekly") {
             const weekStart = startOfWeek(selectedDate, { weekStartsOn: 6 });
@@ -237,7 +285,7 @@ export function TasksOverview({
         }
 
         return [];
-    }, [tasks, viewMode, selectedDate, selectedCategories]);
+    }, [tasks, viewMode, selectedDate, selectedCategories, selectedSubCategories]);
     
     useEffect(() => {
         // Simulate a small delay to allow for render, then show the chart
@@ -281,7 +329,7 @@ export function TasksOverview({
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm">
                         <ListFilter className="mr-2 h-4 w-4" />
-                        Filter
+                        Category
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -299,6 +347,32 @@ export function TasksOverview({
                     ))}
                 </DropdownMenuContent>
             </DropdownMenu>
+
+            {availableSubCategories.length > 0 && (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                            <ListFilter className="mr-2 h-4 w-4" />
+                            Sub-category
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Filter by Sub-category</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {availableSubCategories.map(subCategory => (
+                            <DropdownMenuCheckboxItem
+                                key={subCategory}
+                                checked={selectedSubCategories.includes(subCategory)}
+                                onSelect={(e) => e.preventDefault()}
+                                onCheckedChange={() => handleSubCategoryChange(subCategory)}
+                            >
+                                {subCategory}
+                            </DropdownMenuCheckboxItem>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
+
             <Button onClick={handleDownload} variant="outline" size="sm">
                 <Download className="mr-2 h-4 w-4" />
                 Download
