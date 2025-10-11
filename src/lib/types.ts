@@ -15,6 +15,7 @@ export type Task = {
   dueDate: Date;
   priority: number;
   category: TaskCategory;
+  subcategory?: string;
   isCompleted: boolean;
   timeSpent: number; // in seconds
   timeEntries?: TimeEntry[]; // Array of time entries

@@ -46,6 +46,7 @@ import { cn } from "@/lib/utils";
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
+  subcategory: z.string().optional(),
   dueDate: z.date({ required_error: "A due date is required." }),
   category: z.string({ required_error: "Category is required" }),
   customCategory: z.string().optional(),
@@ -76,6 +77,7 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
     defaultValues: {
       title: "",
       description: "",
+      subcategory: "",
       dueDate: new Date(),
       category: "personal",
       customCategory: "",
@@ -91,6 +93,7 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
       form.reset({
         ...taskToEdit,
         description: taskToEdit.description || "",
+        subcategory: taskToEdit.subcategory || "",
         category: isCustom ? "other" : taskToEdit.category,
         customCategory: isCustom ? taskToEdit.category : "",
       });
@@ -98,6 +101,7 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
       form.reset({
         title: "",
         description: "",
+        subcategory: "",
         dueDate: new Date(),
         category: "personal",
         customCategory: "",
@@ -193,6 +197,9 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
                           selected={field.value}
                           onSelect={field.onChange}
                           initialFocus
+                          disabled={(date) =>
+                            date < new Date("1900-01-01")
+                          }
                         />
                       </PopoverContent>
                     </Popover>
@@ -214,6 +221,7 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
                 )}
               />
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
              <FormField
                 control={form.control}
                 name="category"
@@ -238,6 +246,20 @@ export function CreateTaskDialog({ isOpen, setIsOpen, onTaskCreate, onTaskUpdate
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="subcategory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subcategory (optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Project X" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             {categoryValue === 'other' && (
                 <FormField

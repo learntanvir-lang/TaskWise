@@ -198,6 +198,11 @@ export function TaskItem({
           {getCategoryIcon(task.category)}
           <span className="ml-1">{task.category}</span>
         </Badge>
+        {task.subcategory && (
+          <Badge variant="secondary" className="capitalize border-primary shadow-sm">
+            {task.subcategory}
+          </Badge>
+        )}
         {(totalTime > 0) && (
             <Badge 
               variant="outline"
